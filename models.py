@@ -13,16 +13,15 @@ class Customer(db.Model, SerializerMixin):
     location = db.Column(db.String(100), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    vehicles = db.relationship('Vehicle', backref='customer', lazy=True)
-    service_requests = db.relationship('ServiceRequest', backref='customer', lazy=True)
-    users = db.relationship('User', backref='customer', lazy=True)
+    vehicles = db.relationship('Vehicle', backref='customer', lazy=True, cascade="all, delete")
+    service_requests = db.relationship('ServiceRequest', backref='customer', lazy=True, cascade="all, delete")
+    users = db.relationship('User', backref='customer', lazy=True, cascade="all, delete")
 
     serialize_rules = (
         '-vehicles.customer',
         '-service_requests.customer',
         '-users.customer',
     )
-
 
 
 class Vehicle(db.Model, SerializerMixin):
@@ -35,9 +34,12 @@ class Vehicle(db.Model, SerializerMixin):
     customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    service_requests = db.relationship('ServiceRequest', backref='vehicle', lazy=True)
+    service_requests = db.relationship('ServiceRequest', backref='vehicle', lazy=True, cascade="all, delete")
 
-    serialize_rules=('-service_requests.vehicle', '-customer.vehicles')
+    serialize_rules = (
+        '-service_requests.vehicle',
+        '-customer.vehicles',
+    )
 
 
 class User(db.Model, SerializerMixin):
@@ -52,7 +54,12 @@ class User(db.Model, SerializerMixin):
     mechanic_id = db.Column(db.Integer, db.ForeignKey('mechanics.id'), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    serialize_rules=('-mechanic.users', '-admin.users', '-customer.users')
+    serialize_rules = (
+        '-mechanic.users',
+        '-admin.users',
+        '-customer.users',
+    )
+
 
 class Admin(db.Model, SerializerMixin):
     __tablename__ = 'admins'
@@ -62,9 +69,11 @@ class Admin(db.Model, SerializerMixin):
     phone_number = db.Column(db.String(15), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    users = db.relationship('User', backref='admin', lazy=True)
+    users = db.relationship('User', backref='admin', lazy=True, cascade="all, delete")
 
-    serialize_rules = ('-users.admin',)
+    serialize_rules = (
+        '-users.admin',
+    )
 
 
 class Mechanic(db.Model, SerializerMixin):
@@ -77,10 +86,13 @@ class Mechanic(db.Model, SerializerMixin):
     phone_number = db.Column(db.String(15), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    service_requests = db.relationship('ServiceRequest', backref='mechanic', lazy=True)
-    users = db.relationship('User', backref='mechanic', lazy=True)
+    service_requests = db.relationship('ServiceRequest', backref='mechanic', lazy=True, cascade="all, delete")
+    users = db.relationship('User', backref='mechanic', lazy=True, cascade="all, delete")
 
-    serialize_rules = ('-service_requests.mechanic', '-users.mechanic',)
+    serialize_rules = (
+        '-service_requests.mechanic',
+        '-users.mechanic',
+    )
 
 
 class ServiceRequest(db.Model, SerializerMixin):
@@ -95,12 +107,17 @@ class ServiceRequest(db.Model, SerializerMixin):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=False)
-    vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicles.id'), nullable=False)
+    vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicles.id'), nullable=True) # change to false later
     mechanic_id = db.Column(db.Integer, db.ForeignKey('mechanics.id'), nullable=True)
 
-    inventories = db.relationship('ServiceRequestInventory', backref='service_request', lazy=True)
+    inventories = db.relationship('ServiceRequestInventory', backref='service_request', lazy=True, cascade="all, delete")
 
-    serialize_rules = ('-customer.service_requests', '-vehicle.service_requests', '-mechanic.service_requests', '-inventories.service_request',)
+    serialize_rules = (
+        '-customer.service_requests',
+        '-vehicle.service_requests',
+        '-mechanic.service_requests',
+        '-inventories.service_request',
+    )
 
 
 class Inventory(db.Model, SerializerMixin):
@@ -112,9 +129,11 @@ class Inventory(db.Model, SerializerMixin):
     price = db.Column(db.Float, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    service_requests = db.relationship('ServiceRequestInventory', backref='inventory', lazy=True)
+    service_requests = db.relationship('ServiceRequestInventory', backref='inventory', lazy=True, cascade="all, delete")
 
-    serialize_rules = ('-service_requests.inventory',)
+    serialize_rules = (
+        '-service_requests.inventory',
+    )
 
 
 class ServiceRequestInventory(db.Model, SerializerMixin):
@@ -125,5 +144,7 @@ class ServiceRequestInventory(db.Model, SerializerMixin):
     inventory_id = db.Column(db.Integer, db.ForeignKey('inventory.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-
-    serialize_rules = ('-service_request.inventories', '-inventory.service_requests')
+    serialize_rules = (
+        '-service_request.inventories',
+        '-inventory.service_requests',
+    )

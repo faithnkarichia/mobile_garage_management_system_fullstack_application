@@ -3,17 +3,27 @@ from models import ServiceRequestInventory, db
 
 service_request_inventory_bp = Blueprint("service_request_inventory_bp", __name__)
 
+# Utility function for safe dict
+def sri_to_dict(sri):
+    return {
+        'id': sri.id,
+        'service_request_id': sri.service_request_id,
+        'inventory_id': sri.inventory_id
+    }
+
 @service_request_inventory_bp.route('/service_request_inventories', methods=['GET'])
 def get_sri_list():
     items = ServiceRequestInventory.query.all()
-    return jsonify([sri.to_dict() for sri in items]), 200
+    if not items:
+        return jsonify({'message': 'No service request inventory records found'}), 404
+    return jsonify([sri_to_dict(item) for item in items]), 200
 
 @service_request_inventory_bp.route('/service_request_inventories/<int:sri_id>', methods=['GET'])
 def get_sri(sri_id):
-    sri = ServiceRequestInventory.query.filter_by(id=sri_id).first()
+    sri = ServiceRequestInventory.query.get(sri_id)
     if not sri:
         return jsonify({'error': 'Record not found'}), 404
-    return jsonify(sri.to_dict()), 200
+    return jsonify(sri_to_dict(sri)), 200
 
 @service_request_inventory_bp.route('/service_request_inventories', methods=['POST'])
 def create_sri():
@@ -27,11 +37,11 @@ def create_sri():
     )
     db.session.add(new_sri)
     db.session.commit()
-    return jsonify(new_sri.to_dict()), 201
+    return jsonify(sri_to_dict(new_sri)), 201
 
 @service_request_inventory_bp.route('/service_request_inventories/<int:sri_id>', methods=['PUT'])
 def update_sri(sri_id):
-    sri = ServiceRequestInventory.query.filter_by(id=sri_id).first()
+    sri = ServiceRequestInventory.query.get(sri_id)
     if not sri:
         return jsonify({'error': 'Record not found'}), 404
 
@@ -45,13 +55,13 @@ def update_sri(sri_id):
         sri.inventory_id = data['inventory_id']
 
     db.session.commit()
-    return jsonify(sri.to_dict()), 200
+    return jsonify(sri_to_dict(sri)), 200
 
-@service_request_inventory_bp.route('/service_request_inventories/<int:sri_id>', methods=['DELETE'])
-def delete_sri(sri_id):
-    sri = ServiceRequestInventory.query.filter_by(id=sri_id).first()
-    if not sri:
-        return jsonify({'error': 'Record not found'}), 404
-    db.session.delete(sri)
-    db.session.commit()
-    return jsonify({'message': 'Record deleted successfully'}), 200
+# @service_request_inventory_bp.route('/service_request_inventories/<int:sri_id>', methods=['DELETE'])
+# def delete_sri(sri_id):
+#     sri = ServiceRequestInventory.query.get(sri_id)
+#     if not sri:
+#         return jsonify({'error': 'Record not found'}), 404
+#     db.session.delete(sri)
+#     db.session.commit()
+#     return jsonify({'message': 'Record deleted successfully'}), 200

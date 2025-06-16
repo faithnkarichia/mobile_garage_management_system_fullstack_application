@@ -1,20 +1,33 @@
 from flask import Blueprint, request, jsonify
-from models import User, db
+from models import User, db, Customer, Admin, Mechanic
 import re
 
 user_bp = Blueprint("user_bp", __name__)
 
+# Utility to build dict representation
+def user_to_dict(user):
+    return {
+        'id': user.id,
+        'email': user.email,
+        'role': user.role,
+        'customer_id': user.customer_id,
+        'admin_id': user.admin_id,
+        'mechanic_id': user.mechanic_id
+    }
+
 @user_bp.route('/users', methods=['GET'])
 def get_users():
     users = User.query.all()
-    return jsonify([u.to_dict() for u in users]), 200
+    if not users:
+        return jsonify({'message': 'No users found'}), 404
+    return jsonify([user_to_dict(u) for u in users]), 200
 
 @user_bp.route('/users/<int:user_id>', methods=['GET'])
 def get_user_by_id(user_id):
-    user = User.query.filter_by(id=user_id).first()
+    user = User.query.get(user_id)
     if not user:
         return jsonify({'error': 'User not found'}), 404
-    return jsonify(user.to_dict()), 200
+    return jsonify(user_to_dict(user)), 200
 
 @user_bp.route('/users', methods=['POST'])
 def create_user():
@@ -35,19 +48,21 @@ def create_user():
 
     new_user = User(
         email=email,
-        password=data['password'],  # In production hash this!
+        password=data['password'],  # ⚠ In production hash this!
         role=data['role'],
         customer_id=data.get('customer_id'),
         admin_id=data.get('admin_id'),
         mechanic_id=data.get('mechanic_id')
     )
+
+   
     db.session.add(new_user)
     db.session.commit()
-    return jsonify(new_user.to_dict()), 201
+    return jsonify(user_to_dict(new_user)), 201
 
 @user_bp.route('/users/<int:user_id>', methods=['PUT'])
 def update_user(user_id):
-    user = User.query.filter_by(id=user_id).first()
+    user = User.query.get(user_id)
     if not user:
         return jsonify({'error': 'User not found'}), 404
 
@@ -81,13 +96,22 @@ def update_user(user_id):
         user.mechanic_id = data['mechanic_id']
 
     db.session.commit()
-    return jsonify(user.to_dict()), 200
+    return jsonify(user_to_dict(user)), 200
 
 @user_bp.route('/users/<int:user_id>', methods=['DELETE'])
 def delete_user(user_id):
     user = User.query.filter_by(id=user_id).first()
     if not user:
         return jsonify({'error': 'User not found'}), 404
-    db.session.delete(user)
-    db.session.commit()
-    return jsonify({'message': 'User deleted successfully'}), 200
+
+    # # Delete linked Customer, Mechanic, Admin if they exist
+    # if user.customer:
+    #     db.session.delete(user.customer)
+    # if user.mechanic:
+    #     db.session.delete(user.mechanic)
+    # if user.admin:
+    #     db.session.delete(user.admin)
+
+    # db.session.delete(user)
+    # db.session.commit()
+    # return jsonify({'message': 'User and related records deleted successfully'}), 200

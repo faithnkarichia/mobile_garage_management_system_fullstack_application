@@ -1,27 +1,22 @@
 from flask import Blueprint, request, jsonify
 from models import Admin, db
 import re
+
 admin_bp = Blueprint("admin_bp", __name__)
 
 @admin_bp.route('/admins', methods=['GET'])
 def get_admins():
-    admins=Admin.query.all()
-
-    admin_list=[admin.to_dict() for admin in admins]
-    return jsonify(admin_list),200
-
+    admins = Admin.query.all()
+    if not admins:
+        return jsonify({'message': 'No admins found'}), 404
+    return jsonify([admin.to_dict() for admin in admins]), 200
 
 @admin_bp.route('/admins/<int:admin_id>', methods=['GET'])
 def get_admin_by_id(admin_id):
-    admin=Admin.query.filter_by(id=admin_id).first()
-
+    admin = Admin.query.filter_by(id=admin_id).first()
     if not admin:
-        return jsonify({'error': 'Admin not found'}),404
-    
-    return jsonify(admin.to_dict()),200
-
-
-
+        return jsonify({'error': 'Admin not found'}), 404
+    return jsonify(admin.to_dict()), 200
 
 @admin_bp.route('/admins/<int:admin_id>', methods=['PUT'])
 def update_admin(admin_id):
@@ -42,7 +37,6 @@ def update_admin(admin_id):
         updated = True
 
     if 'phone_number' in data:
-        import re
         phone = data['phone_number'].strip()
         if not re.match(r'^\+?\d{10,15}$', phone):
             return jsonify({'error': 'Invalid phone number format'}), 400
@@ -58,55 +52,33 @@ def update_admin(admin_id):
     db.session.commit()
     return jsonify(admin.to_dict()), 200
 
-
-
-
-
-
 @admin_bp.route('/admins/<int:admin_id>', methods=['DELETE'])
-
 def delete_admin(admin_id):
     admin = Admin.query.filter_by(id=admin_id).first()
-    
     if not admin:
         return jsonify({'error': 'Admin not found'}), 404
-    
     db.session.delete(admin)
     db.session.commit()
-    
     return jsonify({'message': 'Admin deleted successfully'}), 200
-
-
-
-
-
-
-
-
 
 @admin_bp.route('/admins', methods=['POST'])
 def create_admin():
     try:
         data = request.get_json()
-
         if not data or 'name' not in data or 'phone_number' not in data:
             return jsonify({'error': 'Invalid data'}), 400
 
-        phone = data['phone_number']
-
-        # Basic regex: starts with optional +, followed by 10-15 digits
+        phone = data['phone_number'].strip()
         if not re.fullmatch(r'^\+?\d{10,15}$', phone):
             return jsonify({'error': 'Invalid phone number format'}), 400
 
-        # Check for duplicates
-        if Admin.query.filter_by(name=data['name']).first():
+        if Admin.query.filter_by(name=data['name'].strip()).first():
             return jsonify({'error': 'Admin with this name already exists'}), 409
-
         if Admin.query.filter_by(phone_number=phone).first():
             return jsonify({'error': 'Admin with this phone number already exists'}), 409
 
         new_admin = Admin(
-            name=data['name'],
+            name=data['name'].strip(),
             phone_number=phone
         )
         db.session.add(new_admin)
@@ -116,11 +88,3 @@ def create_admin():
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
-
-
-
-    
-
-
-    
-    

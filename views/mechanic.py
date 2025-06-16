@@ -4,17 +4,30 @@ import re
 
 mechanic_bp = Blueprint("mechanic_bp", __name__)
 
+# Utility function for safe dict
+def mechanic_to_dict(mechanic):
+    return {
+        'id': mechanic.id,
+        'name': mechanic.name,
+        'speciality': mechanic.speciality,
+        'location': mechanic.location,
+        'phone_number': mechanic.phone_number,
+        'created_at': mechanic.created_at.isoformat()
+    }
+
 @mechanic_bp.route('/mechanics', methods=['GET'])
 def get_mechanics():
     mechanics = Mechanic.query.all()
-    return jsonify([m.to_dict() for m in mechanics]), 200
+    if not mechanics:
+        return jsonify({'message': 'No mechanics found'}), 404
+    return jsonify([mechanic_to_dict(m) for m in mechanics]), 200
 
 @mechanic_bp.route('/mechanics/<int:mechanic_id>', methods=['GET'])
 def get_mechanic_by_id(mechanic_id):
-    mechanic = Mechanic.query.filter_by(id=mechanic_id).first()
+    mechanic = Mechanic.query.get(mechanic_id)
     if not mechanic:
         return jsonify({'error': 'Mechanic not found'}), 404
-    return jsonify(mechanic.to_dict()), 200
+    return jsonify(mechanic_to_dict(mechanic)), 200
 
 @mechanic_bp.route('/mechanics', methods=['POST'])
 def create_mechanic():
@@ -40,7 +53,7 @@ def create_mechanic():
         )
         db.session.add(new_mechanic)
         db.session.commit()
-        return jsonify(new_mechanic.to_dict()), 201
+        return jsonify(mechanic_to_dict(new_mechanic)), 201
 
     except Exception as e:
         db.session.rollback()
@@ -48,7 +61,7 @@ def create_mechanic():
 
 @mechanic_bp.route('/mechanics/<int:mechanic_id>', methods=['PUT'])
 def update_mechanic(mechanic_id):
-    mechanic = Mechanic.query.filter_by(id=mechanic_id).first()
+    mechanic = Mechanic.query.get(mechanic_id)
     if not mechanic:
         return jsonify({'error': 'Mechanic not found'}), 404
 
@@ -59,21 +72,24 @@ def update_mechanic(mechanic_id):
     updated = False
 
     if 'name' in data:
-        if not data['name'].strip():
+        name = data['name'].strip()
+        if not name:
             return jsonify({'error': 'Name cannot be empty'}), 400
-        mechanic.name = data['name'].strip()
+        mechanic.name = name
         updated = True
 
     if 'speciality' in data:
-        if not data['speciality'].strip():
+        speciality = data['speciality'].strip()
+        if not speciality:
             return jsonify({'error': 'Speciality cannot be empty'}), 400
-        mechanic.speciality = data['speciality'].strip()
+        mechanic.speciality = speciality
         updated = True
 
     if 'location' in data:
-        if not data['location'].strip():
+        location = data['location'].strip()
+        if not location:
             return jsonify({'error': 'Location cannot be empty'}), 400
-        mechanic.location = data['location'].strip()
+        mechanic.location = location
         updated = True
 
     if 'phone_number' in data:
@@ -90,14 +106,13 @@ def update_mechanic(mechanic_id):
         return jsonify({'error': 'No valid fields to update'}), 400
 
     db.session.commit()
-    return jsonify(mechanic.to_dict()), 200
+    return jsonify(mechanic_to_dict(mechanic)), 200
 
-@mechanic_bp.route('/mechanics/<int:mechanic_id>', methods=['DELETE'])
-def delete_mechanic(mechanic_id):
-    mechanic = Mechanic.query.filter_by(id=mechanic_id).first()
-    if not mechanic:
-        return jsonify({'error': 'Mechanic not found'}), 404
-
-    db.session.delete(mechanic)
-    db.session.commit()
-    return jsonify({'message': 'Mechanic deleted successfully'}), 200
+# @mechanic_bp.route('/mechanics/<int:mechanic_id>', methods=['DELETE'])
+# def delete_mechanic(mechanic_id):
+#     mechanic = Mechanic.query.get(mechanic_id)
+#     if not mechanic:
+#         return jsonify({'error': 'Mechanic not found'}), 404
+#     db.session.delete(mechanic)
+#     db.session.commit()
+#     return jsonify({'message': 'Mechanic deleted successfully'}), 200
