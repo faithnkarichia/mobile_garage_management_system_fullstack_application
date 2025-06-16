@@ -104,14 +104,14 @@ def delete_user(user_id):
     if not user:
         return jsonify({'error': 'User not found'}), 404
 
-    # # Delete linked Customer, Mechanic, Admin if they exist
-    # if user.customer:
-    #     db.session.delete(user.customer)
-    # if user.mechanic:
-    #     db.session.delete(user.mechanic)
-    # if user.admin:
-    #     db.session.delete(user.admin)
+    # Delete linked Customer, Mechanic, Admin if they exist
+    if user.customer:
+        db.session.delete(user.customer)
+    if user.mechanic:
+        db.session.delete(user.mechanic)
+    if user.admin:
+        db.session.delete(user.admin)
 
-    # db.session.delete(user)
-    # db.session.commit()
-    # return jsonify({'message': 'User and related records deleted successfully'}), 200
+    db.session.delete(user)
+    db.session.commit()
+    return jsonify({'message': 'User and related records deleted successfully'}), 200
