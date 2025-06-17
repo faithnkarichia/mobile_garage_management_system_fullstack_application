@@ -14,6 +14,7 @@ with app.app_context():
     db.session.add_all([cust1, cust2])
     db.session.commit()
 
+
     # Seed vehicles
     vehicle1 = Vehicle(make="Toyota", model="Corolla", year_of_manufacture=2015, customer_id=cust1.id)
     vehicle2 = Vehicle(make="Honda", model="Civic", year_of_manufacture=2018, customer_id=cust2.id)

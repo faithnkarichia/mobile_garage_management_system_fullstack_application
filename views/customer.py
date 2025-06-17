@@ -1,12 +1,19 @@
 from flask import Blueprint, request, jsonify
 from models import Customer, db
 import re
+from flask_jwt_extended import jwt_required, get_jwt_identity
 
 customer_bp = Blueprint("customer_bp", __name__)
 
 # GET all customers
+
+
 @customer_bp.route('/customers', methods=['GET'])
+@jwt_required()
 def get_customers():
+    identity = get_jwt_identity()
+    if identity['role'] != 'admin':
+        return jsonify({'error': 'Unauthorized access'}), 403
     customers = Customer.query.all()
     if not customers:
         return jsonify({'message': 'No customers found'}), 404
@@ -30,7 +37,7 @@ def get_customer(customer_id):
     customer = Customer.query.filter_by(id=customer_id).first()
     if not customer:
         return jsonify({'error': 'Customer not found'}), 404
-    
+
     customer_data = {
         'id': customer.id,
         'name': customer.name,
@@ -72,8 +79,15 @@ def create_customer():
     return jsonify(new_customer.to_dict()), 201
 
 # UPDATE customer
+
+
 @customer_bp.route('/customers/<int:customer_id>', methods=['PUT'])
+@jwt_required()
 def update_customer(customer_id):
+    identity = get_jwt_identity()
+    print(f"Identity: {identity}")  # Debugging line to check identity
+    if identity['role'] != 'customer' or identity['id'] != customer_id:
+        return jsonify({'error': 'Unauthorized access'}), 403
     customer = Customer.query.filter_by(id=customer_id).first()
     if not customer:
         return jsonify({'error': 'Customer not found'}), 404
@@ -116,12 +130,12 @@ def update_customer(customer_id):
 
     db.session.commit()
     return jsonify({
-    'id': customer.id,
-    'name': customer.name,
-    'phone_number': customer.phone_number,
-    'location': customer.location,
-    'created_at': customer.created_at.isoformat()
-}), 200
+        'id': customer.id,
+        'name': customer.name,
+        'phone_number': customer.phone_number,
+        'location': customer.location,
+        'created_at': customer.created_at.isoformat()
+    }), 200
 
 # # DELETE customer
 # @customer_bp.route('/customers/<int:customer_id>', methods=['DELETE'])

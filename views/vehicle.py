@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
 from models import Vehicle, db
+from flask_jwt_extended import jwt_required, get_jwt_identity
 
 vehicle_bp = Blueprint("vehicle_bp", __name__)
 
@@ -14,10 +15,26 @@ def vehicle_to_dict(vehicle):
     }
 
 @vehicle_bp.route('/vehicles', methods=['GET'])
+@jwt_required()
 def get_vehicles():
+    identity = get_jwt_identity()
+    if identity['role'] != 'admin':
+        return jsonify({'error': 'Unauthorized access'}), 403
     vehicles = Vehicle.query.all()
     if not vehicles:
         return jsonify({'message': 'No vehicles found'}), 404
+    return jsonify([vehicle_to_dict(v) for v in vehicles]), 200
+
+
+@vehicle_bp.route('/vehicles/customer/<int:customer_id>', methods=['GET'])
+@jwt_required()
+def get_vehicles_by_customer(customer_id):
+    identity = get_jwt_identity()
+    if identity['role'] != 'customer':
+        return jsonify({'error': 'Unauthorized access'}), 403
+    vehicles = Vehicle.query.filter_by(customer_id=customer_id).all()
+    if not vehicles:
+        return jsonify({'message': 'No vehicles found for this customer'}), 404
     return jsonify([vehicle_to_dict(v) for v in vehicles]), 200
 
 @vehicle_bp.route('/vehicles/<int:vehicle_id>', methods=['GET'])
@@ -28,7 +45,11 @@ def get_vehicle(vehicle_id):
     return jsonify(vehicle_to_dict(vehicle)), 200
 
 @vehicle_bp.route('/vehicles', methods=['POST'])
+@jwt_required()
 def create_vehicle():
+    identity = get_jwt_identity()
+    if identity['role'] != 'customer':
+        return jsonify({'error': 'Unauthorized access'}), 403
     data = request.get_json()
     if not data or 'make' not in data or 'model' not in data or 'year_of_manufacture' not in data or 'customer_id' not in data:
         return jsonify({'error': 'Missing required fields'}), 400
@@ -44,7 +65,11 @@ def create_vehicle():
     return jsonify(vehicle_to_dict(new_vehicle)), 201
 
 @vehicle_bp.route('/vehicles/<int:vehicle_id>', methods=['PUT'])
+@jwt_required()
 def update_vehicle(vehicle_id):
+    identity = get_jwt_identity()
+    if identity['role'] != 'customer':
+        return jsonify({'error': 'Unauthorized access'}), 403
     vehicle = Vehicle.query.get(vehicle_id)
     if not vehicle:
         return jsonify({'error': 'Vehicle not found'}), 404

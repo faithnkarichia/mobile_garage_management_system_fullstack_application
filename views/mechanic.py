@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from models import Mechanic, db
 import re
+from flask_jwt_extended import jwt_required, get_jwt_identity                                                                                                                                                                                                                        
 
 mechanic_bp = Blueprint("mechanic_bp", __name__)
 
@@ -16,21 +17,34 @@ def mechanic_to_dict(mechanic):
     }
 
 @mechanic_bp.route('/mechanics', methods=['GET'])
+@jwt_required()
 def get_mechanics():
+    identity = get_jwt_identity()
+    # if identity['role'] not in ['admin', 'mechanic']:
+    if identity['role'] != 'admin':
+        return jsonify({'error': 'Unauthorized access'}), 403
     mechanics = Mechanic.query.all()
     if not mechanics:
         return jsonify({'message': 'No mechanics found'}), 404
     return jsonify([mechanic_to_dict(m) for m in mechanics]), 200
 
 @mechanic_bp.route('/mechanics/<int:mechanic_id>', methods=['GET'])
+@jwt_required()
 def get_mechanic_by_id(mechanic_id):
+    identity = get_jwt_identity()
+    if identity['role'] != 'admin':
+        return jsonify({'error': 'Unauthorized access'}), 403
     mechanic = Mechanic.query.get(mechanic_id)
     if not mechanic:
         return jsonify({'error': 'Mechanic not found'}), 404
     return jsonify(mechanic_to_dict(mechanic)), 200
 
 @mechanic_bp.route('/mechanics', methods=['POST'])
+@jwt_required()
 def create_mechanic():
+    identity = get_jwt_identity()
+    if identity['role'] != 'admin':
+        return jsonify({'error': 'Unauthorized access'}), 403
     try:
         data = request.get_json()
         if not data or not all(field in data for field in ['name', 'speciality', 'location', 'phone_number']):
@@ -60,7 +74,11 @@ def create_mechanic():
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
 
 @mechanic_bp.route('/mechanics/<int:mechanic_id>', methods=['PUT'])
+@jwt_required()
 def update_mechanic(mechanic_id):
+    identity = get_jwt_identity()
+    if identity['role'] != 'admin':
+        return jsonify({'error': 'Unauthorized access'}), 403
     mechanic = Mechanic.query.get(mechanic_id)
     if not mechanic:
         return jsonify({'error': 'Mechanic not found'}), 404
@@ -107,6 +125,9 @@ def update_mechanic(mechanic_id):
 
     db.session.commit()
     return jsonify(mechanic_to_dict(mechanic)), 200
+
+# @mechanic_bp.route('/mechanics/<int:id>/assign')
+
 
 # @mechanic_bp.route('/mechanics/<int:mechanic_id>', methods=['DELETE'])
 # def delete_mechanic(mechanic_id):

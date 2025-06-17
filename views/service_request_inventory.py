@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
 from models import ServiceRequestInventory, db
+from flask_jwt_extended import jwt_required, get_jwt_identity
 
 service_request_inventory_bp = Blueprint("service_request_inventory_bp", __name__)
 
@@ -12,21 +13,34 @@ def sri_to_dict(sri):
     }
 
 @service_request_inventory_bp.route('/service_request_inventories', methods=['GET'])
+@jwt_required()
 def get_sri_list():
+    identity = get_jwt_identity()
+    if identity['role'] != 'admin':
+        return jsonify({'error': 'Unauthorized access'}), 403
     items = ServiceRequestInventory.query.all()
     if not items:
         return jsonify({'message': 'No service request inventory records found'}), 404
     return jsonify([sri_to_dict(item) for item in items]), 200
 
 @service_request_inventory_bp.route('/service_request_inventories/<int:sri_id>', methods=['GET'])
+@jwt_required()
 def get_sri(sri_id):
+    identity = get_jwt_identity()
+    if identity['role'] != 'admin':
+        return jsonify({'error': 'Unauthorized access'}), 403
     sri = ServiceRequestInventory.query.get(sri_id)
     if not sri:
         return jsonify({'error': 'Record not found'}), 404
     return jsonify(sri_to_dict(sri)), 200
 
 @service_request_inventory_bp.route('/service_request_inventories', methods=['POST'])
+@jwt_required()
 def create_sri():
+    identity = get_jwt_identity()
+
+    if identity['role'] not in ['admin', 'mechanic']:
+        return jsonify({'error': 'Unauthorized access'}), 403
     data = request.get_json()
     if not data or 'service_request_id' not in data or 'inventory_id' not in data:
         return jsonify({'error': 'Missing required fields'}), 400
@@ -40,7 +54,11 @@ def create_sri():
     return jsonify(sri_to_dict(new_sri)), 201
 
 @service_request_inventory_bp.route('/service_request_inventories/<int:sri_id>', methods=['PUT'])
+@jwt_required()
 def update_sri(sri_id):
+    identity = get_jwt_identity()
+    if identity['role'] != 'admin':
+        return jsonify({'error': 'Unauthorized access'}), 403
     sri = ServiceRequestInventory.query.get(sri_id)
     if not sri:
         return jsonify({'error': 'Record not found'}), 404

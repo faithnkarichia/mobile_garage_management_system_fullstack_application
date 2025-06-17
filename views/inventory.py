@@ -1,11 +1,19 @@
 from flask import Blueprint, request, jsonify
 from models import Inventory, db
+from flask_jwt_extended import jwt_required, get_jwt_identity
 
 inventory_bp = Blueprint("inventory_bp", __name__)
 
 # GET all inventory items
 @inventory_bp.route('/inventories', methods=['GET'])
+@jwt_required()
 def get_inventories():
+    identity = get_jwt_identity()
+    print(f"User identity: {identity}")  
+    if identity['role'] not in ['admin', 'mechanic']:
+        print(f"Unauthorized access attempt by user: {identity['role']}")
+        return jsonify({'error': 'Unauthorized access'}), 403
+
     items = Inventory.query.all()
     if not items:
         return jsonify({'message': 'No inventory items found'}), 404
@@ -24,7 +32,11 @@ def get_inventories():
 
 # GET single inventory item
 @inventory_bp.route('/inventories/<int:item_id>', methods=['GET'])
+@jwt_required()
 def get_inventory_item(item_id):
+    identity = get_jwt_identity()
+    if identity['role'] not in ['admin', 'mechanic']:
+        return jsonify({'error': 'Unauthorized access'}), 403
     item = Inventory.query.filter_by(id=item_id).first()
     if not item:
         return jsonify({'error': 'Inventory item not found'}), 404
@@ -41,7 +53,11 @@ def get_inventory_item(item_id):
 
 # CREATE inventory item
 @inventory_bp.route('/inventories', methods=['POST'])
+@jwt_required()
 def create_inventory_item():
+    identity = get_jwt_identity()
+    if identity['role'] != 'admin':
+        return jsonify({'error': 'Unauthorized access'}), 403
     data = request.get_json()
     if not data or not all(field in data for field in ['name', 'quantity', 'price']):
         return jsonify({'error': 'Missing required fields'}), 400
@@ -75,7 +91,11 @@ def create_inventory_item():
 
 # UPDATE inventory item
 @inventory_bp.route('/inventories/<int:item_id>', methods=['PUT'])
+@jwt_required()
 def update_inventory_item(item_id):
+    identity = get_jwt_identity()
+    if identity['role'] != 'admin':
+        return jsonify({'error': 'Unauthorized access'}), 403
     item = Inventory.query.filter_by(id=item_id).first()
     if not item:
         return jsonify({'error': 'Inventory item not found'}), 404
@@ -115,7 +135,11 @@ def update_inventory_item(item_id):
     return jsonify(item_data), 200
 
 @inventory_bp.route('/inventories/<int:item_id>', methods=['DELETE'])
+@jwt_required()
 def delete_inventory_item(item_id):
+    identity = get_jwt_identity()
+    if identity['role'] != 'admin':
+        return jsonify({'error': 'Unauthorized access'}), 403
     item = Inventory.query.get(item_id)
     if not item:
         return jsonify({'error': 'Inventory item not found'}), 404
@@ -130,7 +154,11 @@ def delete_inventory_item(item_id):
 
 
 @inventory_bp.route('/inventories/<int:item_id>/restock', methods=['PATCH'])
+@jwt_required()
 def restock_inventory(item_id):
+    identity = get_jwt_identity()
+    if identity['role'] != 'admin':
+        return jsonify({'error': 'Unauthorized access'}), 403
     item = Inventory.query.get(item_id)
     if not item:
         return jsonify({'error': 'Inventory item not found'}), 404
@@ -142,6 +170,33 @@ def restock_inventory(item_id):
         return jsonify({'error': 'Amount must be a positive integer'}), 400
 
     item.quantity += quantity
+    db.session.commit()
+    return jsonify({
+        'id': item.id,
+        'name': item.name,
+        'quantity': item.quantity,
+        'price': item.price
+    }), 200
+@inventory_bp.route('/inventories/<int:item_id>/reduce', methods=['PATCH'])
+@jwt_required()
+def reduce_inventory(item_id):
+    identity = get_jwt_identity()
+    if identity['role'] not in ['admin', 'mechanic']:
+        return jsonify({'error': 'Unauthorized access'}), 403
+    item = Inventory.query.get(item_id)
+    if not item:
+        return jsonify({'error': 'Inventory item not found'}), 404
+
+    data = request.get_json()
+    quantity = data.get('quantity')
+
+    if not isinstance(quantity, int) or quantity <= 0:
+        return jsonify({'error': 'Amount must be a positive integer'}), 400
+
+    if item.quantity < quantity:
+        return jsonify({'error': 'Insufficient inventory quantity'}), 400
+
+    item.quantity -= quantity
     db.session.commit()
     return jsonify({
         'id': item.id,

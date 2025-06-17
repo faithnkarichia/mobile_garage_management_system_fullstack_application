@@ -1,10 +1,16 @@
 from flask import Blueprint, request, jsonify
 from models import User, db, Customer, Admin, Mechanic
 import re
+from app import bcrypt
+from app import app
+from datetime import datetime, timedelta
+from flask_jwt_extended import jwt_required, get_jwt_identity, create_access_token
 
 user_bp = Blueprint("user_bp", __name__)
 
 # Utility to build dict representation
+
+
 def user_to_dict(user):
     return {
         'id': user.id,
@@ -15,6 +21,7 @@ def user_to_dict(user):
         'mechanic_id': user.mechanic_id
     }
 
+
 @user_bp.route('/users', methods=['GET'])
 def get_users():
     users = User.query.all()
@@ -22,12 +29,14 @@ def get_users():
         return jsonify({'message': 'No users found'}), 404
     return jsonify([user_to_dict(u) for u in users]), 200
 
+
 @user_bp.route('/users/<int:user_id>', methods=['GET'])
 def get_user_by_id(user_id):
     user = User.query.get(user_id)
     if not user:
         return jsonify({'error': 'User not found'}), 404
     return jsonify(user_to_dict(user)), 200
+
 
 @user_bp.route('/users', methods=['POST'])
 def create_user():
@@ -46,19 +55,24 @@ def create_user():
     if data['role'] not in ['customer', 'admin', 'mechanic']:
         return jsonify({'error': 'Invalid role'}), 400
 
+    plaintext_password = data['password']
+
+    hashed_password = bcrypt.generate_password_hash(
+        plaintext_password).decode('utf-8')
+
     new_user = User(
         email=email,
-        password=data['password'],  # ⚠ In production hash this!
+        password=hashed_password,
         role=data['role'],
         customer_id=data.get('customer_id'),
         admin_id=data.get('admin_id'),
         mechanic_id=data.get('mechanic_id')
     )
 
-   
     db.session.add(new_user)
     db.session.commit()
     return jsonify(user_to_dict(new_user)), 201
+
 
 @user_bp.route('/users/<int:user_id>', methods=['PUT'])
 def update_user(user_id):
@@ -79,7 +93,10 @@ def update_user(user_id):
         user.email = email
 
     if 'password' in data:
-        user.password = data['password']
+        plaintext_password = data['password']
+        hashed_password = bcrypt.generate_password_hash(
+            plaintext_password).decode('utf-8')
+        user.password = hashed_password
 
     if 'role' in data:
         if data['role'] not in ['customer', 'admin', 'mechanic']:
@@ -98,6 +115,7 @@ def update_user(user_id):
     db.session.commit()
     return jsonify(user_to_dict(user)), 200
 
+
 @user_bp.route('/users/<int:user_id>', methods=['DELETE'])
 def delete_user(user_id):
     user = User.query.filter_by(id=user_id).first()
@@ -115,3 +133,25 @@ def delete_user(user_id):
     db.session.delete(user)
     db.session.commit()
     return jsonify({'message': 'User and related records deleted successfully'}), 200
+
+
+@user_bp.route('/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    if not data or 'email' not in data or 'password' not in data:
+        return jsonify({'error': 'Email and password required'}), 400
+
+    email = data['email'].strip().lower()
+    password = data['password']
+
+    user = User.query.filter_by(email=email).first()
+    if not user or not bcrypt.check_password_hash(user.password, password):
+        return jsonify({'error': 'Invalid email or password'}), 401
+
+    # Create JWT
+    access_token = create_access_token(
+        identity={'id': user.id, 'role': user.role},
+        expires_delta=timedelta(hours=2)
+    )
+
+    return jsonify({'access_token': access_token}), 200
