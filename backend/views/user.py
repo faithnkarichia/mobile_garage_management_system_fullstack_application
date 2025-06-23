@@ -4,7 +4,10 @@ import re
 from app import bcrypt
 from app import app
 from datetime import datetime, timedelta
-from flask_jwt_extended import jwt_required, get_jwt_identity, create_access_token
+from flask_jwt_extended import jwt_required, get_jwt_identity, create_access_token,get_jwt
+from flask_mail import Message
+from extensions import mail
+from flask import current_app
 
 user_bp = Blueprint("user_bp", __name__)
 
@@ -124,6 +127,22 @@ def customer_signup():
     db.session.add(new_user)
     db.session.commit()
 
+    msg = Message(
+    "Welcome to Mobile Garage!",
+    recipients=[new_user.email]  # send to the newly registered user's email
+)
+
+    msg.body = (
+    f"Hello {new_customer.name},\n\n"
+    f"Your account has been successfully created!\n\n"
+    f"Email: {new_user.email}\n"
+    f"Role: {new_user.role}\n\n"
+    f"Thank you for registering with Mobile Garage Services.\n"
+)
+
+    current_app.extensions['mail'].send(msg)
+
+
     return jsonify({'message': 'Account created successfully. Please log in.'}), 201
 
 
@@ -215,7 +234,21 @@ def login():
     # Create JWT
     access_token = create_access_token(
         identity={'id': user.id, 'role': user.role},
-        expires_delta=timedelta(hours=2)
+        expires_delta=timedelta(hours=24)
     )
 
     return jsonify({'access_token': access_token}), 200
+
+
+
+
+# from flask_jwt_extended import 
+from extensions import blacklist  
+
+@user_bp.route('/logout', methods=['POST'])
+@jwt_required()
+def logout():
+    jti = get_jwt()['jti']  # JWT unique identifier
+    blacklist.add(jti)
+    return jsonify({'message': 'Successfully logged out'}), 200
+

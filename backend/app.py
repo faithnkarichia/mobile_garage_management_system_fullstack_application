@@ -3,7 +3,9 @@ from models import db, Admin, User, Mechanic, ServiceRequest,Inventory,Customer,
 from flask_migrate import Migrate
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager
+from extensions import mail, jwt
 import os
+from flask_cors import CORS
 
 
 app= Flask(__name__)
@@ -18,9 +20,25 @@ app.config['JWT_SECRET_KEY'] = '6130b704af74a32576e0747fb30a6cde444705dbc1803387
 migrate = Migrate(app, db)
 db.init_app(app)
 bcrypt = Bcrypt(app)
-jwt = JWTManager(app)
+# jwt = JWTManager(app)
+CORS(app)
 
 
+# mail configurations
+
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config["MAIL_USE_SSL"] = False
+
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
+
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
+app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_USERNAME')
+
+
+mail.init_app(app)
+jwt.init_app(app)
 
 
 

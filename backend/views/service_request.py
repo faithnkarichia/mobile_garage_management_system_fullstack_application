@@ -2,6 +2,9 @@ from flask import Blueprint, request, jsonify
 from models import ServiceRequest, Customer, db, Vehicle, User, Mechanic
 from datetime import datetime
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask import current_app
+from flask_mail import Message
+
 
 service_request_bp = Blueprint("service_request_bp", __name__)
 
@@ -121,7 +124,6 @@ def create_service_request():
         db.session.rollback()
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
 
-
 # update_service_request
 @service_request_bp.route('/service_requests/<int:request_id>', methods=['PUT'])
 @jwt_required()
@@ -133,12 +135,14 @@ def update_service_request(request_id):
     if not req:
         return jsonify({'error': 'Service request not found'}), 404
 
-    
+    print(identity['role'])
+
     if identity['role'] == 'admin':
-        pass
+        allowed_fields = ['mechanic_id', 'status']
     elif identity['role'] == 'customer':
         if not user or not user.customer_id or req.customer_id != user.customer_id:
             return jsonify({'error': 'Unauthorized to update this request'}), 403
+        allowed_fields = ['issue', 'location', 'vehicle_id', 'requested_at', 'completed_at']
     else:
         return jsonify({'error': 'Unauthorized access'}), 403
 
@@ -146,28 +150,110 @@ def update_service_request(request_id):
     if not data:
         return jsonify({'error': 'No data provided'}), 400
 
+   
+    unauthorized_fields = [key for key in data if key not in allowed_fields]
+    if unauthorized_fields:
+        return jsonify({
+            'error': 'Unauthorized to update the following fields:',
+            'fields': unauthorized_fields
+        }), 403
+
     try:
-        if 'issue' in data:
-            req.issue = data['issue'].strip()
-        if 'location' in data:
-            req.location = data['location'].strip()
-        if 'status' in data:
-            req.status = data['status']
-            if req.status.lower() == 'completed' and not req.completed_at:
-                req.completed_at = datetime.utcnow()
-        if 'vehicle_id' in data:
-            req.vehicle_id = data['vehicle_id']
-        if 'mechanic_id' in data:
-            mechanic = Mechanic.query.get(data['mechanic_id'])
-            if not mechanic:
-                return jsonify({'error': 'Invalid mechanic_id'}), 400
-            req.mechanic_id = data['mechanic_id']
-        if 'requested_at' in data:
-            req.requested_at = datetime.fromisoformat(data['requested_at'])
-        if 'completed_at' in data:
-            req.completed_at = datetime.fromisoformat(data['completed_at'])
+        mechanic_assigned = False
+        email_needs_sending = False
+
+        for key in data:
+            if key == 'mechanic_id':
+                mechanic = Mechanic.query.get(data['mechanic_id'])
+                if not mechanic:
+                    return jsonify({'error': 'Invalid mechanic_id'}), 400
+                req.mechanic_id = data['mechanic_id']
+                mechanic_assigned = True
+                email_needs_sending = True
+
+            elif key == 'status':
+                req.status = data['status']
+                if req.status.lower() == 'completed' and not req.completed_at:
+                    req.completed_at = datetime.utcnow()
+                email_needs_sending = True
+
+            elif key == 'issue':
+                req.issue = data['issue'].strip()
+                email_needs_sending = True
+
+            elif key == 'location':
+                req.location = data['location'].strip()
+                email_needs_sending = True
+
+            elif key == 'vehicle_id':
+                req.vehicle_id = data['vehicle_id']
+                email_needs_sending = True
+
+            elif key == 'requested_at':
+                req.requested_at = datetime.fromisoformat(data['requested_at'])
+                email_needs_sending = True
+
+            elif key == 'completed_at':
+                req.completed_at = datetime.fromisoformat(data['completed_at'])
+                email_needs_sending = True
 
         db.session.commit()
+
+        print(email_needs_sending)
+        # Send email
+        if email_needs_sending:
+            try:
+                customer_user = req.customer.users[0]
+                customer_email = customer_user.email
+                customer_name = req.customer.name
+
+                msg = Message(subject="Service Request Update", recipients=[customer_email])
+
+                if identity['role'] == 'admin':
+                    if mechanic_assigned:
+                        msg.body = f"""
+Hello {customer_name},
+
+A mechanic has been assigned to your service request (ID: {req.id}).
+
+Assigned Mechanic:
+Name: {mechanic.name}
+Phone Number: {mechanic.phone_number}
+Location: {mechanic.location}
+
+Thank you,
+Mobile Garage Team
+"""
+                    elif 'status' in data:
+                        msg.body = f"""
+Hello {customer_name},
+
+The status of your service request (ID: {req.id}) has been updated to "{req.status}".
+
+Thank you,
+Mobile Garage Team
+"""
+
+                elif identity['role'] == 'customer':
+                    msg.body = f"""
+Hello {customer_name},
+
+You have successfully updated your service request (ID: {req.id}).
+
+Updated Details:
+Issue: {req.issue}
+Location: {req.location}
+
+Thank you,
+Mobile Garage Team
+"""
+
+                if msg:
+                    current_app.extensions['mail'].send(msg)
+
+            except Exception as e:
+                print(f"Email send error: {str(e)}")
+
         return jsonify(service_request_to_dict(req)), 200
 
     except Exception as e:

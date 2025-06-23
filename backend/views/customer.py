@@ -12,6 +12,7 @@ customer_bp = Blueprint("customer_bp", __name__)
 @jwt_required()
 def get_customers():
     identity = get_jwt_identity()
+    print(f"Identity: {identity}")  # Debugging line to check identity
     if identity['role'] != 'admin':
         return jsonify({'error': 'Unauthorized access'}), 403
     customers = Customer.query.all()
