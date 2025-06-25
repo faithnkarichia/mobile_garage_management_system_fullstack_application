@@ -1,8 +1,8 @@
-"""initial tables
+"""Initial migration for Postgres
 
-Revision ID: c35c24032d24
+Revision ID: 4f2404e9ed7c
 Revises: 
-Create Date: 2025-06-24 15:48:58.997129
+Create Date: 2025-06-26 00:17:15.429151
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'c35c24032d24'
+revision = '4f2404e9ed7c'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -38,6 +38,7 @@ def upgrade():
     sa.Column('name', sa.String(length=100), nullable=False),
     sa.Column('quantity', sa.Integer(), nullable=False),
     sa.Column('price', sa.Float(), nullable=False),
+    sa.Column('threshold', sa.Integer(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
@@ -100,6 +101,7 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('service_request_id', sa.Integer(), nullable=False),
     sa.Column('inventory_id', sa.Integer(), nullable=False),
+    sa.Column('used_quantity', sa.Integer(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['inventory_id'], ['inventory.id'], ),
     sa.ForeignKeyConstraint(['service_request_id'], ['service_requests.id'], ),

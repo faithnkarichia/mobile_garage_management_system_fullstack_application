@@ -6,12 +6,14 @@ from flask_jwt_extended import JWTManager
 from extensions import mail, jwt
 import os
 from flask_cors import CORS
+from dotenv import load_dotenv
 
+load_dotenv()
 
 app= Flask(__name__)
 app.config['DEBUG'] = True
 
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///app.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'postgresql://postgres:password@localhost:5432/mobile_garage')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_SECRET_KEY'] = '6130b704af74a32576e0747fb30a6cde444705dbc18033870d4fd8670f18ea10'
 
