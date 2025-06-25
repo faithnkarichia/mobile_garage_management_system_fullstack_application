@@ -7,7 +7,7 @@ export default function HomePage() {
       <section className="relative flex-grow flex items-center min-h-screen">
         <div className="absolute inset-0 z-0">
           <img
-            src="src/assets/garage.jpg"
+            src="https://images.unsplash.com/photo-1639927676452-984f8210befc?q=80&w=764&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
             alt="Mechanic working on car"
             className="w-full h-full object-cover"
           />
