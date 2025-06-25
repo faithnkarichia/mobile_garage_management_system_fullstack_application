@@ -34,7 +34,7 @@ const InventoryPage = () => {
     const token = localStorage.getItem("access_token");
     console.log("Token:", token); // Debugging line to check token value
 
-    fetch("http://localhost:5555/inventories", {
+    fetch(`${process.env.VITE_API_URL}/inventories`, {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
@@ -55,9 +55,7 @@ const InventoryPage = () => {
   // Filter inventory based on search term
   const filteredInventory = inventory.filter(
     (item) =>
-      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.supplier.toLowerCase().includes(searchTerm.toLowerCase())
+      item.name.toLowerCase().includes(searchTerm.toLowerCase()) 
   );
 
   // Sort inventory
@@ -98,7 +96,7 @@ const InventoryPage = () => {
   const addInventoryItem = () => {
     const token = localStorage.getItem("access_token");
 
-    fetch("http://localhost:5555/inventories", {
+    fetch(`${process.env.VITE_API_URL}/inventories`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -146,17 +144,19 @@ const InventoryPage = () => {
   const updateInventoryItem = () => {
     const token = localStorage.getItem("access_token");
 
-    fetch(`http://localhost:5555/inventories/${currentItem.id}`, {
+    fetch(`${process.env.VITE_API_URL}/inventories/${currentItem.id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
-        name: currentItem.name,
-        quantity: parseInt(currentItem.quantity),
-        price: parseFloat(currentItem.price),
-        threshold: parseInt(currentItem.threshold),
+        inventory: {
+          name: currentItem.name,
+          quantity: parseInt(currentItem.quantity),
+          price: parseFloat(currentItem.price),
+          threshold: parseInt(currentItem.threshold),
+        }
       }),
     })
       .then((response) => {
@@ -184,7 +184,7 @@ const InventoryPage = () => {
   const restockInventoryItem = () => {
     const token = localStorage.getItem("access_token");
 
-    fetch(`http://localhost:5555/inventories/${currentItem.id}/restock`, {
+    fetch(`${process.env.VITE_API_URL}/inventories/${currentItem.id}/restock`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
@@ -219,7 +219,7 @@ const InventoryPage = () => {
   const deleteInventoryItem = (id) => {
     const token = localStorage.getItem("access_token");
 
-    fetch(`http://localhost:5555/inventories/${id}`, {
+    fetch(`${process.env.VITE_API_URL}/inventories/${id}`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
@@ -395,7 +395,7 @@ const InventoryPage = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">
-                          ${Number(item.price).toFixed(2)}
+                          ksh {Number(item.price).toFixed(2)}
                         </div>
                       </td>
                       {/* <td className="px-6 py-4 whitespace-nowrap">

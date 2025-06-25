@@ -1,15 +1,34 @@
-import { useState } from 'react';
+
+import { useState, useEffect } from 'react';
 import { 
   Wrench, Users, ClipboardCheck, Car, 
   Calendar, ShieldCheck, ChevronDown, ChevronRight,
   LogOut, Menu, X, User
 } from "lucide-react";
 import { Link, useNavigate } from 'react-router-dom';
+import { jwtDecode } from 'jwt-decode';
 
 export default function AdminLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [userData, setUserData] = useState(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+
+    try {
+      const decoded = jwtDecode(token);
+      setUserData(decoded);
+    } catch (error) {
+      localStorage.removeItem('access_token');
+      navigate('/login');
+    }
+  }, [navigate]);
 
   const navItems = [
     { name: "Dashboard", icon: ClipboardCheck, path: "/admin" },
@@ -21,9 +40,11 @@ export default function AdminLayout({ children }) {
   ];
 
   const handleLogout = () => {
-    // Implement logout logic
+    localStorage.removeItem('access_token');
     navigate('/login');
   };
+
+  if (!userData) return null;
 
   return (
     <div className="flex h-screen bg-gray-100 font-sans">
@@ -96,7 +117,7 @@ export default function AdminLayout({ children }) {
                   <div className="h-8 w-8 rounded-full bg-primary-500 flex items-center justify-center text-white">
                     <User className="h-5 w-5" />
                   </div>
-                  <span className="hidden md:inline">Admin User</span>
+                  <span className="hidden md:inline">{userData.name || 'Admin'}</span>
                   <ChevronDown className="h-4 w-4 hidden md:inline" />
                 </button>
               </div>

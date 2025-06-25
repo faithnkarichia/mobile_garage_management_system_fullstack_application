@@ -1,13 +1,11 @@
 import { useEffect, useState } from "react";
+import Swal from 'sweetalert2'; 
 import {
   Wrench,
-  Clock,
   Check,
   X,
   Search,
   ChevronDown,
-  ChevronUp,
-  Calendar,
   User,
   Car,
   AlertCircle,
@@ -15,40 +13,45 @@ import {
 
 const MechanicServiceRequests = () => {
   const [serviceRequests, setServiceRequests] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+
   useEffect(() => {
     const token = localStorage.getItem("access_token");
-    console.log("Fetching service requests with token:", token);
-    fetch("http://localhost:5555/service_requests", {
+    
+    fetch(`${process.env.VITE_API_URL}/service_requests`, {
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
     })
       .then((response) => response.json())
-      .then((data) => {
-        setServiceRequests(data);
-        console.log("Service Requests:", data);
-      })
+      .then((data) => setServiceRequests(data))
       .catch((error) => {
         console.error("Error fetching service requests:", error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Failed to load service requests',
+          confirmButtonColor: '#3085d6',
+        });
       });
   }, []);
-
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedRequest, setSelectedRequest] = useState(null);
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-  console.log("Service Requests:-----------------", serviceRequests);
-  const filteredRequests = serviceRequests && serviceRequests.length > 0 && serviceRequests.filter(
-    (request) =>
-      (request.vehicle && request.vehicle.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (request.customer && request.customer.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (request.issue && request.issue.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-  
+  console.log(serviceRequests);
+  const filteredRequests =
+    (serviceRequests && serviceRequests.length > 0 &&
+      serviceRequests?.filter(
+        (request) =>
+          request.vehicle?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          request.customer?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          request.issue?.toLowerCase().includes(searchTerm.toLowerCase())
+      )) ||
+    [];
 
   const updateRequestStatus = (id, newStatus) => {
-    setServiceRequests(
-      serviceRequests.map((request) =>
+    setServiceRequests((prev) =>
+      prev.map((request) =>
         request.id === id ? { ...request, status: newStatus } : request
       )
     );
@@ -60,8 +63,8 @@ const MechanicServiceRequests = () => {
   };
 
   const closeDetails = () => {
-    setIsDetailsOpen(false);
     setSelectedRequest(null);
+    setIsDetailsOpen(false);
   };
 
   return (
@@ -71,6 +74,7 @@ const MechanicServiceRequests = () => {
           My Service Requests
         </h1>
 
+        {/* Search */}
         <div className="mb-6">
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -86,100 +90,96 @@ const MechanicServiceRequests = () => {
           </div>
         </div>
 
+        {/* Requests Table */}
         <div className="bg-white shadow rounded-lg overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                     Vehicle
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                     Customer
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                     Issue
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Priority
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                     Actions
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredRequests && filteredRequests.map((request) => (
-                  <tr key={request.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                      {`${request.vehicle_details.make} ${request.vehicle_details.model}, ${request.vehicle_details.year_of_manufacture}`}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {request.createdAt}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
+                {filteredRequests.length > 0 ? (
+                  filteredRequests.map((request) => (
+                    <tr key={request.id}>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">
+                          {`${request.vehicle_details?.make || ""} ${
+                            request.vehicle_details?.model || ""
+                          }, ${
+                            request.vehicle_details?.year_of_manufacture || ""
+                          }`}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {request.createdAt}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {request.customer_id}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-900">
                         {request.issue}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`px-2 py-1 text-xs rounded-full ${
-                          request.priority === "High"
-                            ? "bg-red-100 text-red-800"
-                            : request.priority === "Medium"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : "bg-green-100 text-green-800"
-                        }`}
-                      >
-                        {request.priority}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`px-2 py-1 text-xs rounded-full ${
-                          request.status === "Completed"
-                            ? "bg-green-100 text-green-800"
-                            : request.status === "In Progress"
-                            ? "bg-blue-100 text-blue-800"
-                            : "bg-gray-100 text-gray-800"
-                        }`}
-                      >
-                        {request.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
-                        {request.status !== "Completed" && (
-                          <button
-                            onClick={() =>
-                              updateRequestStatus(request.id, "Completed")
-                            }
-                            className="text-green-600 hover:text-green-900 flex items-center"
-                          >
-                            <Check className="h-4 w-4 mr-1" /> Complete
-                          </button>
-                        )}
-                        <button
-                          onClick={() => openDetails(request)}
-                          className="text-blue-600 hover:text-blue-900 flex items-center"
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span
+                          className={`px-2 py-1 text-xs rounded-full ${
+                            request.status === "Completed"
+                              ? "bg-green-100 text-green-800"
+                              : request.status === "In Progress"
+                              ? "bg-blue-100 text-blue-800"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
                         >
-                          <ChevronDown className="h-4 w-4 mr-1" /> Details
-                        </button>
-                      </div>
+                          {request.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex space-x-2">
+                          {request.status !== "Completed" && (
+                            <button
+                              onClick={() =>
+                                updateRequestStatus(request.id, "Completed")
+                              }
+                              className="text-green-600 hover:text-green-900 flex items-center"
+                            >
+                              <Check className="h-4 w-4 mr-1" /> Complete
+                            </button>
+                          )}
+                          <button
+                            onClick={() => openDetails(request)}
+                            className="text-blue-600 hover:text-blue-900 flex items-center"
+                          >
+                            <ChevronDown className="h-4 w-4 mr-1" /> Details
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td
+                      colSpan="5"
+                      className="px-6 py-4 text-center text-sm text-gray-500"
+                    >
+                      No service requests found.
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
@@ -204,7 +204,6 @@ const MechanicServiceRequests = () => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Left Column */}
                 <div className="space-y-4">
                   <div className="flex items-start">
                     <Car className="h-5 w-5 text-blue-500 mt-0.5 mr-3" />
@@ -212,7 +211,14 @@ const MechanicServiceRequests = () => {
                       <h3 className="text-lg font-semibold text-gray-900">
                         Vehicle Information
                       </h3>
-                      <p className="text-gray-700">{selectedRequest.vehicle}</p>
+                      <p className="text-gray-700">
+                        {`${selectedRequest.vehicle_details?.make || ""} ${
+                          selectedRequest.vehicle_details?.model || ""
+                        }, ${
+                          selectedRequest.vehicle_details
+                            ?.year_of_manufacture || ""
+                        }`}
+                      </p>
                     </div>
                   </div>
 
@@ -220,16 +226,10 @@ const MechanicServiceRequests = () => {
                     <User className="h-5 w-5 text-blue-500 mt-0.5 mr-3" />
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900">
-                        Customer Details
+                        Customer Name
                       </h3>
                       <p className="text-gray-700">
-                        {selectedRequest.customer}
-                      </p>
-                      <p className="text-gray-600">
-                        {selectedRequest.customerPhone}
-                      </p>
-                      <p className="text-gray-600">
-                        {selectedRequest.customerEmail}
+                        {selectedRequest.customer_details?.name}
                       </p>
                     </div>
                   </div>
@@ -245,79 +245,96 @@ const MechanicServiceRequests = () => {
                   </div>
                 </div>
 
-                {/* Right Column */}
+                {/* Inventory Section */}
                 <div className="space-y-4">
-                  <div className="flex items-start">
-                    <Calendar className="h-5 w-5 text-blue-500 mt-0.5 mr-3" />
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">
-                        Timing
-                      </h3>
-                      <p className="text-gray-700">
-                        Created: {selectedRequest.createdAt}
-                      </p>
-                      <p className="text-gray-700">
-                        Estimated Completion:{" "}
-                        {selectedRequest.estimatedCompletion}
-                      </p>
-                    </div>
-                  </div>
+                  {selectedRequest.inventories?.length > 0 && (
+                    <div className="flex items-start">
+                      <Wrench className="h-5 w-5 text-blue-500 mt-0.5 mr-3" />
+                      <div className="w-full">
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          Used Inventories
+                        </h3>
 
-                  <div className="flex items-start">
-                    <Wrench className="h-5 w-5 text-blue-500 mt-0.5 mr-3" />
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">
-                        Parts Required
-                      </h3>
-                      <ul className="list-disc pl-5 text-gray-700">
-                        {selectedRequest.partsRequired.map((part, index) => (
-                          <li key={index}>
-                            {part.name} (PN: {part.partNumber}) - Qty:{" "}
-                            {part.quantity}
-                          </li>
-                        ))}
-                      </ul>
+                        {(() => {
+                          const grouped = {};
+                          selectedRequest.inventories.forEach((inv) => {
+                            if (!grouped[inv.name]) {
+                              grouped[inv.name] = {
+                                name: inv.name,
+                                totalQuantity: 0,
+                                totalCost: 0,
+                                price: inv.price,
+                              };
+                            }
+                            grouped[inv.name].totalQuantity += Number(
+                              inv.used_quantity || 0
+                            );
+                            grouped[inv.name].totalCost +=
+                              Number(inv.used_quantity || 0) *
+                              Number(inv.price || 0);
+                          });
+
+                          const groupedItems = Object.values(grouped);
+                          const totalSpent = groupedItems.reduce(
+                            (sum, item) => sum + item.totalCost,
+                            0
+                          );
+
+                          return (
+                            <>
+                              <ul className="list-disc pl-5 text-gray-700">
+                                {groupedItems.map((item, idx) => (
+                                  <li key={idx}>
+                                    {item.name} – {item.totalQuantity} pcs × Ksh{" "}
+                                    {Number(item.price).toLocaleString()} = Ksh{" "}
+                                    {Number(item.totalCost).toLocaleString()}
+                                  </li>
+                                ))}
+                              </ul>
+
+                              <p className="text-right mt-3 font-semibold text-gray-800">
+                                Total Spent:{" "}
+                                <span className="text-blue-600">
+                                  Ksh{" "}
+                                  {totalSpent.toLocaleString(undefined, {
+                                    minimumFractionDigits: 2,
+                                  })}
+                                </span>
+                              </p>
+                            </>
+                          );
+                        })()}
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
 
               {/* Notes Section */}
-              <div className="mt-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  Additional Notes
-                </h3>
-                <div className="bg-gray-50 p-4 rounded-md">
-                  <p className="text-gray-700">{selectedRequest.notes}</p>
+              {selectedRequest.notes && (
+                <div className="mt-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    Additional Notes
+                  </h3>
+                  <div className="bg-gray-50 p-4 rounded-md">
+                    <p className="text-gray-700">{selectedRequest.notes}</p>
+                  </div>
                 </div>
-              </div>
+              )}
 
-              {/* Status Section */}
+              {/* Footer */}
               <div className="mt-6 flex justify-between items-center">
-                <div>
-                  <span
-                    className={`px-3 py-1 rounded-full text-sm font-medium ${
-                      selectedRequest.priority === "High"
-                        ? "bg-red-100 text-red-800"
-                        : selectedRequest.priority === "Medium"
-                        ? "bg-yellow-100 text-yellow-800"
-                        : "bg-green-100 text-green-800"
-                    }`}
-                  >
-                    Priority: {selectedRequest.priority}
-                  </span>
-                  <span
-                    className={`ml-3 px-3 py-1 rounded-full text-sm font-medium ${
-                      selectedRequest.status === "Completed"
-                        ? "bg-green-100 text-green-800"
-                        : selectedRequest.status === "In Progress"
-                        ? "bg-blue-100 text-blue-800"
-                        : "bg-gray-100 text-gray-800"
-                    }`}
-                  >
-                    Status: {selectedRequest.status}
-                  </span>
-                </div>
+                <span
+                  className={`ml-3 px-3 py-1 rounded-full text-sm font-medium ${
+                    selectedRequest.status === "Completed"
+                      ? "bg-green-100 text-green-800"
+                      : selectedRequest.status === "In Progress"
+                      ? "bg-blue-100 text-blue-800"
+                      : "bg-gray-100 text-gray-800"
+                  }`}
+                >
+                  Status: {selectedRequest.status}
+                </span>
                 {selectedRequest.status !== "Completed" && (
                   <button
                     onClick={() => {

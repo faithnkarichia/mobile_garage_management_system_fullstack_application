@@ -12,6 +12,7 @@ service_request_bp = Blueprint("service_request_bp", __name__)
 
 
 def service_request_to_dict(req):
+    print(req.__dict__)
     return {
         'id': req.id,
         'issue': req.issue,
@@ -22,11 +23,30 @@ def service_request_to_dict(req):
         'vehicle_id': req.vehicle_id,
         'mechanic_id': req.mechanic_id,
         'customer_id': req.customer_id,
+
         'vehicle_details': {
             'make': req.vehicle.make if req.vehicle else None,
             'model': req.vehicle.model if req.vehicle else None,
             'year_of_manufacture': req.vehicle.year_of_manufacture if req.vehicle else None,
-        } if req.vehicle else None
+        } if req.vehicle else None,
+
+        'customer_details': {
+            'name': req.customer.name if req.customer else None,
+            'phone_number': req.customer.phone_number if req.customer else None,
+            'location': req.customer.location if req.customer else None
+        } if req.customer else None,
+
+        'inventories': [
+            {
+                'inventory_id': inv.inventory.id if inv.inventory else None,
+                'name': inv.inventory.name if inv.inventory else None,
+                'used_quantity': inv.used_quantity,
+                'price': inv.inventory.price if inv.inventory else None,
+                 
+            }
+            for inv in req.inventories if inv.inventory
+        ],
+
     }
 
 

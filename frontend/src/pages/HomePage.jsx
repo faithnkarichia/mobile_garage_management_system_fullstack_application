@@ -26,14 +26,7 @@ export default function HomePage() {
               platform. Customers, mechanics, and admins all in one seamless
               system.
             </p>
-            <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-              <button className="px-6 py-3 rounded-lg bg-primary-500 text-white hover:bg-primary-600 transition flex items-center justify-center">
-                Request Service <Wrench className="ml-2 h-5 w-5" />
-              </button>
-              <button className="px-6 py-3 rounded-lg border border-white text-white hover:bg-white hover:text-gray-900 transition flex items-center justify-center">
-                Learn More <ChevronRight className="ml-2 h-5 w-5" />
-              </button>
-            </div>
+           
           </div>
         </div>
       </section>

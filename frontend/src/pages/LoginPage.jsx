@@ -2,6 +2,8 @@ import { User, Lock } from "lucide-react";
 import React, { useState } from "react";
 import { jwtDecode } from 'jwt-decode';
 
+import Swal from 'sweetalert2'; 
+
 export default function LoginPage() {
   const [loginData, setLoginData] = useState({
     email: "",
@@ -16,7 +18,7 @@ export default function LoginPage() {
       ...loginData,
       [name]: value
     });
-    // Clear error when user types
+    
     if (error) setError(null);
   };
 
@@ -25,7 +27,16 @@ export default function LoginPage() {
     setIsSubmitting(true);
     setError(null);
 
-    fetch('http://localhost:5555/login', {  // Added http://
+    
+    Swal.fire({
+      title: 'Logging in...',
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+
+    fetch(`${process.env.VITE_API_URL}/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -44,18 +55,28 @@ export default function LoginPage() {
       return response.json();
     })
     .then(data => {
-      if (data.access_token) {  // Changed from accessToken to access_token to match Flask
+      if (data.access_token) {
         localStorage.setItem('access_token', data.access_token);
         const decoded = jwtDecode(data.access_token); 
-    console.log('Decoded JWT:', decoded);
+        const role = decoded.sub.role;
 
-    const role = decoded.sub.role;
-    console.log('User role:', role);
+        
+        Swal.close();
 
-    // Redirect based on role
-    if (role === 'admin') window.location.href = '/admin';
-    else if (role === 'mechanic') window.location.href = '/mechanic';
-    else window.location.href = '/customer';  // Default
+        
+        Swal.fire({
+          title: 'Success!',
+          text: 'You have successfully logged in.',
+          icon: 'success',
+          confirmButtonText: 'Continue',
+          timer: 2000,
+          timerProgressBar: true,
+        }).then(() => {
+          
+          if (role === 'admin') window.location.href = '/admin';
+          else if (role === 'mechanic') window.location.href = '/mechanic';
+          else window.location.href = '/customer';
+        });
 
       } else {
         throw new Error('No access token received');
@@ -64,6 +85,14 @@ export default function LoginPage() {
     .catch(error => {
       console.error('Login error:', error);
       setError(error.message || 'Login failed. Please try again.');
+      
+      
+      Swal.fire({
+        title: 'Error!',
+        text: error.message || 'Login failed. Please try again.',
+        icon: 'error',
+        confirmButtonText: 'Try Again'
+      });
     })
     .finally(() => {
       setIsSubmitting(false);

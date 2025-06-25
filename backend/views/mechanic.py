@@ -1,7 +1,8 @@
 from flask import Blueprint, request, jsonify
-from models import Mechanic, db
+from models import Mechanic, db, ServiceRequest,User
 import re
-from flask_jwt_extended import jwt_required, get_jwt_identity                                                                                                                                                                                                                        
+from flask_jwt_extended import jwt_required, get_jwt_identity   
+from app import bcrypt                                                                                                                                                                                                                     
 
 mechanic_bp = Blueprint("mechanic_bp", __name__)
 
@@ -49,28 +50,51 @@ def create_mechanic():
     identity = get_jwt_identity()
     if identity['role'] != 'admin':
         return jsonify({'error': 'Unauthorized access'}), 403
+
     try:
         data = request.get_json()
-        if not data or not all(field in data for field in ['name', 'specialty', 'location', 'phone_number', 'email', 'experience_years','status']):
+
+        # ✅ Required fields check
+        required_fields = [
+            'name', 'specialty', 'location',
+            'phone_number', 'email', 'experience_years',
+            'status', 'password'
+        ]
+        if not data or not all(field in data for field in required_fields):
             return jsonify({'error': 'Missing required fields'}), 400
 
+        # ✅ Clean & Validate phone number
         phone = data['phone_number'].strip()
         if not re.fullmatch(r'^\+?\d{10,15}$', phone):
             return jsonify({'error': 'Invalid phone number format'}), 400
 
+        # ✅ Check if mechanic already exists by name/phone/email
         if Mechanic.query.filter_by(name=data['name'].strip()).first():
             return jsonify({'error': 'Mechanic with this name already exists'}), 409
         if Mechanic.query.filter_by(phone_number=phone).first():
             return jsonify({'error': 'Mechanic with this phone number already exists'}), 409
         if Mechanic.query.filter_by(email=data['email'].strip()).first():
             return jsonify({'error': 'Mechanic with this email already exists'}), 409
+
+        # ✅ Email format validation
         if not re.fullmatch(r'^[\w\.-]+@[\w\.-]+\.\w+$', data['email'].strip()):
             return jsonify({'error': 'Invalid email format'}), 400
+
+        # ✅ Experience years must be int ≥ 0
         if not isinstance(data['experience_years'], int) or data['experience_years'] < 0:
             return jsonify({'error': 'Experience years must be a non-negative integer'}), 400
-        if data['status'].strip().title() not in ['Available', 'Unavailable']:
+
+        # ✅ Status validation
+        status = data['status'].strip().title()
+        if status not in ['Available', 'Unavailable']:
             return jsonify({'error': 'Status must be either Available or Unavailable'}), 400
 
+        # ✅ Password validation
+        password = data['password'].strip()
+        if len(password) < 6:
+            return jsonify({'error': 'Password must be at least 6 characters long'}), 400
+
+        # ✅ Create Mechanic
         new_mechanic = Mechanic(
             name=data['name'].strip(),
             specialty=data['specialty'].strip(),
@@ -78,11 +102,25 @@ def create_mechanic():
             phone_number=phone,
             email=data['email'].strip(),
             experience_years=data['experience_years'],
-            status=data['status'].strip(),
-            rating=data.get('rating', None),  # Optional field
+            status=status,
+            rating=data.get('rating', None),
         )
         db.session.add(new_mechanic)
-        db.session.commit()
+        db.session.flush()  # ✅ Get new_mechanic.id without committing yet
+
+        # ✅ Create related User account
+        hashed_pw = bcrypt.generate_password_hash(password).decode('utf-8')
+
+        new_user = User(
+            email=data['email'].strip(),
+            password=hashed_pw,
+            role="mechanic",
+            mechanic_id=new_mechanic.id,
+        )
+        db.session.add(new_user)
+
+        db.session.commit()  # ✅ Commit both together
+
         return jsonify(mechanic_to_dict(new_mechanic)), 201
 
     except Exception as e:
@@ -181,3 +219,33 @@ def update_mechanic(mechanic_id):
 #     db.session.delete(mechanic)
 #     db.session.commit()
 #     return jsonify({'message': 'Mechanic deleted successfully'}), 200
+
+
+
+# backend/routes/mechanic_stats.py
+@mechanic_bp.route('/dashboard/<int:mechanic_id>', methods=['GET'])
+@jwt_required()
+def mechanic_dashboard_data(mechanic_id):
+    identity = get_jwt_identity()
+    if identity['role'] != 'mechanic':
+        return jsonify({'error': 'Unauthorized access'}), 403
+
+    mechanic = Mechanic.query.get(mechanic_id)
+    if not mechanic:
+        return jsonify({'error': 'Mechanic not found'}), 404
+
+    service_requests = ServiceRequest.query.filter_by(mechanic_id=mechanic.id).all()
+
+    total_tasks = len(service_requests)
+    total_hours = 0.0
+
+    for req in service_requests:
+        if req.completed_at:
+            duration = req.completed_at - req.requested_at
+            total_hours += round(duration.total_seconds() / 3600, 2)
+
+    return jsonify({
+        'assigned_tasks': total_tasks,
+        'hours_worked': total_hours
+    }), 200
+

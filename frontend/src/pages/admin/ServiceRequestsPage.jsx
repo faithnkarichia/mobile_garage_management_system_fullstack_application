@@ -22,10 +22,10 @@ export default function ServiceRequestsPage() {
         setError(null);
         
         const [requestsRes, mechanicsRes] = await Promise.all([
-          fetch("http://localhost:5555/service_requests", {
+          fetch(`${process.env.VITE_API_URL}/service_requests`, {
             headers: { Authorization: `Bearer ${token}` }
           }),
-          fetch("http://localhost:5555/mechanics", {
+          fetch(`${process.env.VITE_API_URL}/mechanics`, {
             headers: { Authorization: `Bearer ${token}` }
           })
         ]);
@@ -56,7 +56,7 @@ export default function ServiceRequestsPage() {
     try {
       const token = localStorage.getItem("access_token");
       const response = await fetch(
-        `http://localhost:5555/service_requests/${requestId}`,
+        `${process.env.VITE_API_URL}/service_requests/${requestId}`,
         {
           method: "PUT",
           headers: {
@@ -97,7 +97,7 @@ export default function ServiceRequestsPage() {
     try {
       const token = localStorage.getItem("access_token");
       const response = await fetch(
-        `http://localhost:5555/service_requests/${requestId}`,
+        `${process.env.VITE_API_URL}/service_requests/${requestId}`,
         {
           method: "PUT",
           headers: {
@@ -162,12 +162,7 @@ export default function ServiceRequestsPage() {
     <div className="space-y-6 p-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-gray-900">Service Requests</h1>
-        <button 
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
-          onClick={() => window.location.href = "/service_requests/new"}
-        >
-          + New Request
-        </button>
+      
       </div>
 
       {error && (

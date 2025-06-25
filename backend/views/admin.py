@@ -1,7 +1,9 @@
 from flask import Blueprint, request, jsonify
-from models import Admin, db, User
+from models import Admin, db, User,ServiceRequest,Mechanic
 import re
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from app import bcrypt 
+from datetime import datetime
 
 admin_bp = Blueprint("admin_bp", __name__)
 
@@ -36,34 +38,79 @@ def get_admin_by_id(admin_id):
 @jwt_required()
 def update_admin(admin_id):
     identity = get_jwt_identity()
-    if identity['role'] != 'admin' or identity['id'] != admin_id:
-        return jsonify({'error': 'Unauthorized access'}), 403
 
     admin = Admin.query.filter_by(id=admin_id).first()
     if not admin:
         return jsonify({'error': 'Admin not found'}), 404
 
-    data = request.get_json()
-    if not data:
-        return jsonify({'error': 'No data provided'}), 400
+    print('lkjhgfghj', admin, admin.__dict__)
+    # Optional: only allow that specific admin or a super admin to edit
+    if identity['role'] != 'admin' :
+        return jsonify({'error': 'Unauthorized'}), 403
 
+    data = request.get_json()
+    print('data-0-0-0-0-', data)
     updated = False
 
+    # ✅ Update Admin fields
     if 'name' in data:
-        if not data['name'].strip():
+        print('errorororoorhehehe1', data)
+        name = data.get('name', '').strip()
+        print('name details------', name)
+        if not name:
+            print('-2-2-2-2-2-2-22-2-2-', name)
             return jsonify({'error': 'Name cannot be empty'}), 400
-        admin.name = data['name'].strip()
+
+
+        admin.name = name
         updated = True
 
     if 'phone_number' in data:
-        phone = data['phone_number'].strip()
+
+        phone = data.get('phone_number', '').strip()
+        print('pppppppppp', phone)
         if not re.match(r'^\+?\d{10,15}$', phone):
+            print('eerrr2')
             return jsonify({'error': 'Invalid phone number format'}), 400
         existing = Admin.query.filter_by(phone_number=phone).first()
+
+        print('existing------', existing)
         if existing and existing.id != admin.id:
+            print('errrr3')
             return jsonify({'error': 'Phone number already in use'}), 400
         admin.phone_number = phone
         updated = True
+
+    # ✅ Update User fields
+    user = admin.users[0]  # access related user
+
+    if 'email' in data:
+        email = data['email'].strip()
+        if not email or '@' not in email:
+            print('emailllllll', email)
+            return jsonify({'error': 'Invalid email'}), 400
+        # Make sure no other user has the same email
+        existing_user = User.query.filter_by(email=email).first()
+        if existing_user and existing_user.id != user.id:
+            print('exemailss', existing_user)
+            return jsonify({'error': 'Email already taken'}), 400
+        user.email = email
+        updated = True
+
+    if 'role' in data:
+        role = data['role'].strip().lower()
+        if role not in ['admin']:
+            print('rollellelel', role)
+            return jsonify({'error': 'Invalid role'}), 400
+        user.role = role
+        updated = True
+
+
+    if 'password' in data:
+        hashed_pw = bcrypt.generate_password_hash(data['password']).decode('utf-8')
+        user.password = hashed_pw
+        updated = True
+
 
     if not updated:
         return jsonify({'error': 'No valid fields to update'}), 400
@@ -76,7 +123,7 @@ def update_admin(admin_id):
 @jwt_required()
 def delete_admin(admin_id):
     identity = get_jwt_identity()
-    if identity['role'] != 'admin' or identity['id'] != admin_id:
+    if identity['role'] != 'admin' :
         return jsonify({'error': 'Unauthorized access'}), 403
 
     admin = Admin.query.filter_by(id=admin_id).first()
@@ -93,56 +140,52 @@ def delete_admin(admin_id):
 def create_admin():
     identity = get_jwt_identity()
     if identity['role'] != 'admin':
-        return jsonify({'error': 'Unauthorized access'}), 403
+        return jsonify({'error': 'Unauthorized'}), 403
 
-    try:
-        data = request.get_json()
-        print(f"Received data for new admin: {data}")
-        
-        if not data or 'name' not in data or 'phone_number' not in data or 'users' not in data:
-            return jsonify({'error': 'Missing required fields'}), 400
+    data = request.get_json()
+    print('daaata', data)
 
-        phone = data['phone_number'].strip()
-        if not re.fullmatch(r'^\+?\d{10,15}$', phone):
-            return jsonify({'error': 'Invalid phone number format'}), 400
+    user_data = data.get("users", [{}])[0]
+    email = user_data.get("email")
+    password = user_data.get("password")
+    role = user_data.get("role", "Admin")
 
-        if Admin.query.filter_by(name=data['name'].strip()).first():
-            return jsonify({'error': 'Admin with this name already exists'}), 409
-        if Admin.query.filter_by(phone_number=phone).first():
-            return jsonify({'error': 'Admin with this phone number already exists'}), 409
+    if not all([email, password, data.get("name"), data.get("phone_number")]):
+        return jsonify({"error": "Missing required fields"}), 400
 
-        # Create the Admin first
-        new_admin = Admin(
-            name=data['name'].strip(),
-            phone_number=phone
-        )
-        db.session.add(new_admin)
-        db.session.flush()  # Get new_admin.id before committing
+    if User.query.filter_by(email=email).first():
+        return jsonify({"error": "Email already exists"}), 400
 
-        # Now create associated user(s)
-        for user_data in data['users']:
-            email = user_data.get('email', '').strip().lower()
-            password = user_data.get('password', '').strip()
-            role = user_data.get('role', '').strip().lower()
+    admin = Admin(name=data["name"], phone_number=data["phone_number"])
+    db.session.add(admin)
+    db.session.commit()
 
-            if not email or not password or role != 'admin':
-                return jsonify({'error': 'Invalid user data'}), 400
+    hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
 
-            if User.query.filter_by(email=email).first():
-                return jsonify({'error': 'User with this email already exists'}), 409
+    user = User(email=email, password=hashed_password, role=role, admin_id=admin.id)
+    db.session.add(user)
+    db.session.commit()
 
-            new_user = User(
-                email=email,
-                password=password,
-                role='admin',
-                admin_id=new_admin.id
-            )
-            db.session.add(new_user)
+    return jsonify(admin.to_dict()), 201
 
-        db.session.commit()
-        return jsonify(new_admin.to_dict()), 201
 
-    except Exception as e:
-        db.session.rollback()
-        print(f"Error creating admin and user: {str(e)}")
-        return jsonify({'error': f'An error occurred: {str(e)}'}), 500
+
+@admin_bp.route('/dashboard-stats')
+@jwt_required()
+def dashboard_stats():
+    total_requests = ServiceRequest.query.count()
+    active_requests = ServiceRequest.query.filter_by(status='Pending').count()
+    total_mechanics = Mechanic.query.count()
+
+    today = datetime.utcnow().date()
+    today_appointments = ServiceRequest.query.filter(
+        db.func.date(ServiceRequest.requested_at) == today
+    ).count()
+
+    return jsonify({
+        'total_requests': total_requests,
+        'active_requests': active_requests,
+        'total_mechanics': total_mechanics,
+        'today_appointments': today_appointments,
+    })
+

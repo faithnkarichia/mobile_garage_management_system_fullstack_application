@@ -96,9 +96,9 @@ export default function ContactPage() {
                 <div>
                   <h4 className="font-medium text-gray-900">Address</h4>
                   <p className="text-gray-600">
-                    123 Auto Care Street
+                    Nairobi
                     <br />
-                    Mechanicville, CA 12345
+                    Buruburu
                   </p>
                 </div>
               </div>
@@ -106,14 +106,14 @@ export default function ContactPage() {
                 <Phone className="h-6 w-6 text-primary-500 mt-1 mr-4" />
                 <div>
                   <h4 className="font-medium text-gray-900">Phone</h4>
-                  <p className="text-gray-600">(555) 123-4567</p>
+                  <p className="text-gray-600">(+254) 768692489</p>
                 </div>
               </div>
               <div className="flex items-start mb-6">
                 <Mail className="h-6 w-6 text-primary-500 mt-1 mr-4" />
                 <div>
                   <h4 className="font-medium text-gray-900">Email</h4>
-                  <p className="text-gray-600">contact@autocarepro.com</p>
+                  <p className="text-gray-600">faynkarichia@gmail.com</p>
                 </div>
               </div>
               <div className="flex items-start">

@@ -1,4 +1,6 @@
-import { useState } from 'react';
+
+
+import { useState, useEffect } from 'react';
 import { 
   Wrench, ClipboardCheck, Car, 
   Calendar, Package, 
@@ -6,25 +8,42 @@ import {
   Menu, X, User, Clock
 } from "lucide-react";
 import { Link, useNavigate } from 'react-router-dom';
+import { jwtDecode } from 'jwt-decode';
 
 export default function MechanicLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [userData, setUserData] = useState(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+
+    try {
+      const decoded = jwtDecode(token);
+      setUserData(decoded);
+    } catch (error) {
+      localStorage.removeItem('access_token');
+      navigate('/login');
+    }
+  }, [navigate]);
 
   const navItems = [
     { name: "Dashboard", icon: ClipboardCheck, path: "/mechanic" },
     { name: "Service Requests", icon: Car, path: "/mechanic/requests" },
-    // { name: "Schedule", icon: Calendar, path: "/mechanic/schedule" },
     { name: "Inventory", icon: Package, path: "/mechanic/inventory" },
-    // { name: "My Tools", icon: Wrench, path: "/mechanic/tools" }, // Changed from Tool to Wrench
-    // { name: "Time Tracking", icon: Clock, path: "/mechanic/time" }
   ];
 
   const handleLogout = () => {
-    // Implement logout logic
+    localStorage.removeItem('access_token');
     navigate('/login');
   };
+
+  if (!userData) return null;
 
   return (
     <div className="flex h-screen bg-gray-100 font-sans">
@@ -97,7 +116,7 @@ export default function MechanicLayout({ children }) {
                   <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-white">
                     <User className="h-5 w-5" />
                   </div>
-                  <span className="hidden md:inline">Mechanic Name</span>
+                  <span className="hidden md:inline">{userData.name || 'Mechanic'}</span>
                   <ChevronDown className="h-4 w-4 hidden md:inline" />
                 </button>
               </div>

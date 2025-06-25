@@ -1,6 +1,20 @@
-import { Wrench, ChevronRight, User, MapPin, Phone, Clock } from "lucide-react";
+import { Wrench, ChevronRight, User, MapPin, Phone, Clock, LogOut } from "lucide-react";
+import { useEffect,useState } from "react";
 
 export default function PublicLayout({ children }) {
+
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    // Check if token exists in localStorage
+    const token = localStorage.getItem("access_token");
+    setIsLoggedIn(!!token);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("access_token");
+    window.location.href = "/"; // Redirect to home page after logout
+  };
   return (
     <div className="font-sans bg-white text-gray-900 min-h-screen flex flex-col">
       {/* Header */}
@@ -28,21 +42,34 @@ export default function PublicLayout({ children }) {
             </a>
           </nav>
           <div className="flex space-x-4">
-            <a
-              href="/login"
-              className="px-4 py-2 rounded-lg border border-primary-500 text-primary-500 hover:bg-primary-500 hover:text-white transition"
-            >
-              Login
-            </a>
-            <a
-              href="/register"
-              className="px-4 py-2 rounded-lg bg-primary-500 text-white hover:bg-primary-600 transition flex items-center"
-            >
-              Register <ChevronRight className="ml-1 h-4 w-4" />
-            </a>
+            {isLoggedIn ? (
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition flex items-center"
+              >
+                <LogOut className="mr-1 h-4 w-4" />
+                Logout
+              </button>
+            ) : (
+              <>
+                <a
+                  href="/login"
+                  className="px-4 py-2 rounded-lg border border-primary-500 text-primary-500 hover:bg-primary-500 hover:text-white transition"
+                >
+                  Login
+                </a>
+                <a
+                  href="/register"
+                  className="px-4 py-2 rounded-lg bg-primary-500 text-white hover:bg-primary-600 transition flex items-center"
+                >
+                  Register <ChevronRight className="ml-1 h-4 w-4" />
+                </a>
+              </>
+            )}
           </div>
         </div>
       </header>
+
 
       {/* Main Content */}
       <main className="flex-grow">{children}</main>
@@ -66,7 +93,7 @@ export default function PublicLayout({ children }) {
               <ul className="space-y-2">
                 <li>
                   <a
-                    href="#home"
+                    href="home"
                     className="text-gray-400 hover:text-white transition"
                   >
                     Home
@@ -74,7 +101,7 @@ export default function PublicLayout({ children }) {
                 </li>
                 <li>
                   <a
-                    href="#services"
+                    href="services"
                     className="text-gray-400 hover:text-white transition"
                   >
                     Services
@@ -82,7 +109,7 @@ export default function PublicLayout({ children }) {
                 </li>
                 <li>
                   <a
-                    href="#testimonials"
+                    href="testimonials"
                     className="text-gray-400 hover:text-white transition"
                   >
                     Testimonials
@@ -90,7 +117,7 @@ export default function PublicLayout({ children }) {
                 </li>
                 <li>
                   <a
-                    href="#contact"
+                    href="contact"
                     className="text-gray-400 hover:text-white transition"
                   >
                     Contact
@@ -102,10 +129,10 @@ export default function PublicLayout({ children }) {
               <h3 className="text-lg font-semibold mb-4">Contact Us</h3>
               <ul className="space-y-2 text-gray-400">
                 <li className="flex items-center">
-                  <MapPin className="h-5 w-5 mr-2" /> 123 Auto St, Repair City
+                  <MapPin className="h-5 w-5 mr-2" /> Nairobi
                 </li>
                 <li className="flex items-center">
-                  <Phone className="h-5 w-5 mr-2" /> (555) 123-4567
+                  <Phone className="h-5 w-5 mr-2" /> (+254)768692489
                 </li>
                 <li className="flex items-center">
                   <Clock className="h-5 w-5 mr-2" /> Mon-Fri: 8AM-6PM

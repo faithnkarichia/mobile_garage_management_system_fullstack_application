@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Wrench, Star, Phone, Mail, Search, Plus, X, Calendar, MapPin, User } from "lucide-react";
+import Swal from 'sweetalert2'; 
 
 export default function MechanicsPage() {
   const [mechanics, setMechanics] = useState([]);
@@ -13,6 +14,7 @@ export default function MechanicsPage() {
     specialty: "",
     phone_number: "",
     email: "",
+    password: "mechpass", 
     status: "Available",
     experience_years: "",
     location: "",
@@ -21,7 +23,7 @@ export default function MechanicsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch mechanics on component mount
+ 
   useEffect(() => {
     const fetchMechanics = async () => {
       const token = localStorage.getItem('access_token');
@@ -32,7 +34,7 @@ export default function MechanicsPage() {
 
       try {
         setLoading(true);
-        const response = await fetch("http://localhost:5555/mechanics", {
+        const response = await fetch(`${process.env.VITE_API_URL}/mechanics`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -55,21 +57,21 @@ export default function MechanicsPage() {
     fetchMechanics();
   }, []);
 
-  // Filter mechanics based on search term
+
   const filteredMechanics = mechanics.filter((mechanic) =>
     mechanic.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     mechanic.specialty.toLowerCase().includes(searchTerm.toLowerCase()) ||
     mechanic.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Add new mechanic
+
   const handleAddMechanic = () => {
     const token = localStorage.getItem('access_token');
     const mechanicData={
       ...newMechanic,experience_years: parseInt(newMechanic.experience_years, 10) || 0
     }
     
-    fetch("http://localhost:5555/mechanics", {
+    fetch(`${process.env.VITE_API_URL}/mechanics`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -93,6 +95,7 @@ export default function MechanicsPage() {
         specialty: "",
         phone_number: "",
         email: "",
+        password:"mechpass",
         status: "Available",
         experience_years: "",
         location: "",
@@ -105,11 +108,11 @@ export default function MechanicsPage() {
     });
   };
 
-  // Update existing mechanic
+  
   const handleEditMechanic = () => {
     const token = localStorage.getItem('access_token');
     
-    fetch(`http://localhost:5555/mechanics/${currentMechanic.id}`, {
+    fetch(`${process.env.VITE_API_URL}/mechanics/${currentMechanic.id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -137,7 +140,7 @@ export default function MechanicsPage() {
     });
   };
 
-  // Handle input changes for add form
+  
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewMechanic(prev => ({
@@ -146,7 +149,7 @@ export default function MechanicsPage() {
     }));
   };
 
-  // Handle input changes for edit form
+  
   const handleEditInputChange = (e) => {
     const { name, value } = e.target;
     setCurrentMechanic(prev => ({
@@ -155,19 +158,19 @@ export default function MechanicsPage() {
     }));
   };
 
-  // Open edit modal with mechanic data
+  
   const openEditModal = (mechanic) => {
     setCurrentMechanic({...mechanic});
     setIsEditModalOpen(true);
   };
 
-  // Open view modal with mechanic data
+  
   const openViewModal = (mechanic) => {
     setCurrentMechanic({...mechanic});
     setIsViewModalOpen(true);
   };
 
-  // Format date for display
+  
   const formatDate = (dateString) => {
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
     return new Date(dateString).toLocaleDateString(undefined, options);
@@ -390,6 +393,22 @@ export default function MechanicsPage() {
                     placeholder="john@example.com"
                   />
                 </div>
+                {/* <div>
+  <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+    Password *
+  </label>
+  <input
+    type="password"
+    id="password"
+    name="password"
+    value={newMechanic.password}
+    onChange={handleInputChange}
+    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+    required
+    placeholder="Secure password"
+  />
+</div> */}
+
 
                 <div>
                   <label htmlFor="experience_years" className="block text-sm font-medium text-gray-700 mb-1">
@@ -407,6 +426,7 @@ export default function MechanicsPage() {
                   />
                 </div>
 
+                
                 <div>
                   <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">
                     Location
@@ -450,7 +470,8 @@ export default function MechanicsPage() {
                 <button
                   type="button"
                   onClick={handleAddMechanic}
-                  disabled={!newMechanic.name || !newMechanic.specialty || !newMechanic.phone_number || !newMechanic.email}
+                  disabled={!newMechanic.name || !newMechanic.specialty || !newMechanic.phone_number || !newMechanic.email || !newMechanic.password}
+
                   className={`px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
                     !newMechanic.name || !newMechanic.specialty || !newMechanic.phone_number || !newMechanic.email
                       ? "bg-blue-400 cursor-not-allowed"

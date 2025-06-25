@@ -6,28 +6,28 @@ const services = [
     description: "Oil changes, filter replacements, fluid checks and top-offs, tire rotations, and basic inspections.",
     icon: Wrench,
     duration: "30-60 mins",
-    price: "$50-$100"
+    price: "ksh5000-ksh10000"
   },
   {
     name: "Diagnostic Services",
     description: "Comprehensive vehicle diagnostics to identify issues with engine, transmission, and other systems.",
     icon: ShieldCheck,
     duration: "1-2 hours",
-    price: "$80-$150"
+    price: "ksh8000-ksh15000"
   },
   {
     name: "Brake Services",
     description: "Brake pad replacements, rotor resurfacing or replacement, brake fluid flush, and caliper service.",
     icon: Clock,
     duration: "1-3 hours",
-    price: "$120-$300"
+    price: "ksh12000-ksh30000"
   },
   {
     name: "Engine Repair",
     description: "From minor tune-ups to major overhauls, including belt replacements and engine component repairs.",
     icon: Car,
     duration: "2-6 hours",
-    price: "$200-$800"
+    price: "ksh20000-ksh80000"
   }
 ];
 
@@ -75,15 +75,15 @@ export default function ServicesPage() {
         </div>
 
         <div className="mt-12 text-center">
-          <div className="inline-flex rounded-md shadow">
-            <a
-              href="/contact"
-              className="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-primary-500 hover:bg-primary-600"
-            >
-              Schedule Service
-            </a>
-          </div>
-        </div>
+  <div className="inline-flex rounded-md shadow">
+    <a
+      href="/contact"
+      className="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-500 hover:bg-blue-600"
+    >
+      Schedule Service
+    </a>
+  </div>
+</div>
       </div>
     </div>
   );

@@ -1,5 +1,7 @@
+
 import { useState } from 'react';
 import { User, Phone, MapPin, Mail, Lock } from "lucide-react";
+import Swal from 'sweetalert2'; 
 
 export default function RegisterPage() {
   const [userInfo, setUserInfo] = useState({
@@ -21,7 +23,7 @@ export default function RegisterPage() {
       ...userInfo,
       [name]: value
     });
-    // Clear error when user types
+    
     if (error) setError(null);
   };
   
@@ -33,27 +35,49 @@ export default function RegisterPage() {
     e.preventDefault();
     setError(null);
   
-    // Client-side validation
+   
     if (userInfo.password !== userInfo.confirmPassword) {
       setError("Passwords don't match!");
+      Swal.fire({
+        icon: 'error',
+        title: 'Oops...',
+        text: 'Passwords do not match!',
+        confirmButtonColor: '#3085d6',
+      });
       return;
     }
   
     if (!termsAccepted) {
       setError("You must accept the terms and conditions");
+      Swal.fire({
+        icon: 'error',
+        title: 'Terms Not Accepted',
+        text: 'You must accept the terms and conditions to register',
+        confirmButtonColor: '#3085d6',
+      });
       return;
     }
   
     setSubmitting(true);
-  
-    fetch('http://localhost:5555/signup', {
+    
+    
+    Swal.fire({
+      title: 'Registering...',
+      html: 'Please wait while we create your account',
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+
+    fetch(`${process.env.VITE_API_URL}/signup`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         name: userInfo.name,
-        phone_number: userInfo.phone,
+        phone_number: userInfo.phone_number,
         location: userInfo.location,
         email: userInfo.email,
         password: userInfo.password
@@ -62,7 +86,6 @@ export default function RegisterPage() {
       .then((res) => {
         if (res.status === 204) {
           return { message: "Registration successful" };
-         
         }
         return res.json().then((data) => {
           if (!res.ok) {
@@ -72,7 +95,7 @@ export default function RegisterPage() {
         });
       })
       .then((data) => {
-        // Clear the form
+        
         setUserInfo({
           name: "",
           phone_number: "",
@@ -82,21 +105,35 @@ export default function RegisterPage() {
           confirmPassword: "",
         });
         setTermsAccepted(false);
-  
-        alert(data.message || "Registration successful! You can now login.");
-        window.location.href = '/login';
+
+        
+        Swal.fire({
+          icon: 'success',
+          title: 'Registration Successful!',
+          text: data.message || 'You can now login with your credentials',
+          confirmButtonColor: '#3085d6',
+          showConfirmButton: true,
+          timer: 3000
+        }).then(() => {
+          window.location.href = '/login';
+        });
       })
       .catch((err) => {
         console.error("Registration error:", err);
         setError(err.message || "Something went wrong.");
+        
+       
+        Swal.fire({
+          icon: 'error',
+          title: 'Registration Failed',
+          text: err.message || 'Something went wrong. Please try again.',
+          confirmButtonColor: '#3085d6',
+        });
       })
       .finally(() => {
         setSubmitting(false);
       });
-   
   };
-  
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-lg">

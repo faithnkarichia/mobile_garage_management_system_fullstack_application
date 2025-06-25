@@ -149,6 +149,7 @@ class ServiceRequestInventory(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     service_request_id = db.Column(db.Integer, db.ForeignKey('service_requests.id'), nullable=False)
     inventory_id = db.Column(db.Integer, db.ForeignKey('inventory.id'), nullable=False)
+    used_quantity = db.Column(db.Integer, nullable=False) 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     serialize_rules = (

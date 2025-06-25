@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import Swal from 'sweetalert2';
 import {
   Car,
   Wrench,
@@ -42,8 +43,8 @@ const CustomerDashboard = () => {
     const { sub } = decoded;
     console.log("-----------", sub.id, sub.role, decoded);
 
-    // Fetch service requests based on role
-    fetch("http://localhost:5555/service_requests", {
+   
+    fetch(`${process.env.VITE_API_URL}/service_requests`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -56,10 +57,10 @@ const CustomerDashboard = () => {
         setServiceRequests(serviceRequests);
         console.log("Service Requests:", serviceRequests);
 
-        // Only fetch vehicles if the user is a customer
+        
         if (sub.role === "customer" && sub.customer_id) {
           return fetch(
-            `http://localhost:5555/vehicles/customer/${sub.customer_id}`,
+            `${process.env.VITE_API_URL}/vehicles/customer/${sub.customer_id}`,
             {
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -67,11 +68,11 @@ const CustomerDashboard = () => {
             }
           );
         } else {
-          return null; // Don't fetch vehicles for admin/mechanic
+          return null; 
         }
       })
       .then((res) => {
-        if (!res) return; // Skip if not a customer
+        if (!res) return; 
         if (!res.ok) throw new Error("Failed to fetch vehicles");
         return res.json();
       })
@@ -86,7 +87,7 @@ const CustomerDashboard = () => {
       });
   };
 
-  // useEffect to run the fetch when the component mounts
+ 
   useEffect(() => {
     fetchServiceRequestsAndVehicles();
   }, []);
@@ -113,12 +114,12 @@ const CustomerDashboard = () => {
     setNewVehicle((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Submit new service request to backend
+  
   const submitServiceRequest = (e) => {
     e.preventDefault();
     const token = localStorage.getItem("access_token");
 
-    // Create the request data with proper structure
+  
     const requestData = {
       issue: newRequest.issue,
       location: newRequest.location,
@@ -129,7 +130,7 @@ const CustomerDashboard = () => {
       },
     };
 
-    fetch("http://localhost:5555/service_requests", {
+    fetch(`${process.env.VITE_API_URL}/service_requests`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -144,10 +145,10 @@ const CustomerDashboard = () => {
         return response.json();
       })
       .then((data) => {
-        // Update state with the new request
+        
         setServiceRequests((prevRequests) => [...prevRequests, data]);
 
-        // Reset form
+        
         setNewRequest({
           issue: "",
           location: "",
@@ -159,11 +160,25 @@ const CustomerDashboard = () => {
         });
         setShowRequestForm(false);
 
-        // Refresh data
+        
         fetchServiceRequestsAndVehicles();
+
+        Swal.fire({
+          title: 'Success!',
+          text: 'Service request created successfully',
+          icon: 'success',
+          confirmButtonText: 'OK'
+        });
       })
+      
       .catch((error) => {
         console.error("Error creating service request:", error);
+        Swal.fire({
+          title: 'Error!',
+          text: error.message || 'Failed to create service request',
+          icon: 'error',
+          confirmButtonText: 'OK'
+        });
       });
   };
 
@@ -171,7 +186,7 @@ const CustomerDashboard = () => {
     e.preventDefault();
     const token = localStorage.getItem("access_token");
 
-    const vehicles = fetch("http://localhost:5555/vehicles", {
+    const vehicles = fetch(`${process.env.VITE_API_URL}/vehicles`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -201,14 +216,19 @@ const CustomerDashboard = () => {
     const token = localStorage.getItem("access_token");
     const decoded = jwtDecode(token);
   
-    // Validate required fields
+   
     if (!newVehicle.make || !newVehicle.model || !newVehicle.year_of_manufacture) {
-      alert("Please fill all required fields");
+      Swal.fire({
+        title: 'Validation Error',
+        text: 'Please fill all required fields',
+        icon: 'warning',
+        confirmButtonText: 'OK'
+      });
       return;
     }
   
     try {
-      const response = await fetch("http://localhost:5555/vehicles", {
+      const response = await fetch(`${process.env.VITE_API_URL}/vehicles`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -227,9 +247,9 @@ const CustomerDashboard = () => {
       }
   
       if (result.exists) {
-        // Vehicle exists - refresh the list
+        
         const vehiclesResponse = await fetch(
-          `http://localhost:5555/vehicles/customer/${decoded.customer_id}`,
+          `${process.env.VITE_API_URL}/vehicles/customer/${decoded.customer_id}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -238,34 +258,49 @@ const CustomerDashboard = () => {
         );
         const updatedVehicles = await vehiclesResponse.json();
         setVehicles(updatedVehicles);
-        alert("This vehicle already exists in your garage");
+        Swal.fire({
+          title: 'Vehicle Exists',
+          text: 'This vehicle already exists in your garage',
+          icon: 'info',
+          confirmButtonText: 'OK'
+        });
       } else {
-        // New vehicle added
+        
         setVehicles([...vehicles, result.vehicle]);
-        alert("Vehicle added successfully");
+        Swal.fire({
+          title: 'Success!',
+          text: 'Vehicle added successfully',
+          icon: 'success',
+          confirmButtonText: 'OK'
+        });
       }
   
       setNewVehicle({ make: "", model: "", year_of_manufacture: "" });
       setShowVehicleForm(false);
     } catch (error) {
       console.error("Error processing vehicle:", error);
-      alert(error.message);
+      Swal.fire({
+        title: 'Error!',
+        text: error.message || 'Failed to add vehicle',
+        icon: 'error',
+        confirmButtonText: 'OK'
+      });
     }
   };
 
-  // Update service request in backend
+  
   const updateServiceRequest = (e) => {
     e.preventDefault();
     const token = localStorage.getItem("access_token");
 
-    // Prepare the data to send - only include editable fields for customers
+   
     const updateData = {
       issue: editingRequest.issue,
       location: editingRequest.location,
       vehicle_id: editingRequest.vehicle_id,
     };
 
-    fetch(`http://localhost:5555/service_requests/${editingRequest.id}`, {
+    fetch(`${process.env.VITE_API_URL}/service_requests/${editingRequest.id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -287,61 +322,73 @@ const CustomerDashboard = () => {
         );
         setEditingRequest(null);
         setShowRequestForm(false);
+        Swal.fire({
+          title: 'Success!',
+          text: 'Service request updated successfully',
+          icon: 'success',
+          confirmButtonText: 'OK'
+        });
       })
       .catch((error) => {
         console.error("Error updating service request:", error);
+        Swal.fire({
+          title: 'Error!',
+          text: error.message || 'Failed to update service request',
+          icon: 'error',
+          confirmButtonText: 'OK'
+        });
       });
   };
 
   // Delete service request from backend
-  const deleteServiceRequest = (id) => {
-    const token = localStorage.getItem("access_token");
+  // const deleteServiceRequest = (id) => {
+  //   const token = localStorage.getItem("access_token");
 
-    fetch(`http://localhost:5555/service_requests/${id}`, {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Failed to delete service request");
-        }
-        setServiceRequests(
-          serviceRequests.filter((request) => request.id !== id)
-        );
-      })
-      .catch((error) => {
-        console.error("Error deleting service request:", error);
-      });
-  };
+  //   fetch(`${process.env.VITE_API_URL}/service_requests/${id}`, {
+  //     method: "DELETE",
+  //     headers: {
+  //       "Content-Type": "application/json",
+  //       Authorization: `Bearer ${token}`,
+  //     },
+  //   })
+  //     .then((response) => {
+  //       if (!response.ok) {
+  //         throw new Error("Failed to delete service request");
+  //       }
+  //       setServiceRequests(
+  //         serviceRequests.filter((request) => request.id !== id)
+  //       );
+  //     })
+  //     .catch((error) => {
+  //       console.error("Error deleting service request:", error);
+  //     });
+  // };
 
   // Delete vehicle from backend
-  const deleteVehicle = (id) => {
-    const token = localStorage.getItem("access_token");
+  // const deleteVehicle = (id) => {
+  //   const token = localStorage.getItem("access_token");
 
-    fetch(`http://localhost:5555/vehicles/${id}`, {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Failed to delete vehicle");
-        }
-        setVehicles(vehicles.filter((vehicle) => vehicle.id !== id));
-        // Also remove any service requests associated with this vehicle
-        setServiceRequests(
-          serviceRequests.filter((request) => request.vehicle_id !== id)
-        );
-      })
-      .catch((error) => {
-        console.error("Error deleting vehicle:", error);
-      });
-  };
+  //   fetch(`${process.env.VITE_API_URL}/vehicles/${id}`, {
+  //     method: "DELETE",
+  //     headers: {
+  //       "Content-Type": "application/json",
+  //       Authorization: `Bearer ${token}`,
+  //     },
+  //   })
+  //     .then((response) => {
+  //       if (!response.ok) {
+  //         throw new Error("Failed to delete vehicle");
+  //       }
+  //       setVehicles(vehicles.filter((vehicle) => vehicle.id !== id));
+  //       // Also remove any service requests associated with this vehicle
+  //       setServiceRequests(
+  //         serviceRequests.filter((request) => request.vehicle_id !== id)
+  //       );
+  //     })
+  //     .catch((error) => {
+  //       console.error("Error deleting vehicle:", error);
+  //     });
+  // };
 
   const getVehicleById = (id) => {
     return vehicles && vehicles.find((vehicle) => vehicle.id === id);
@@ -439,12 +486,12 @@ const CustomerDashboard = () => {
                         >
                           Edit
                         </button>
-                        <button
+                        {/* <button
                           onClick={() => deleteServiceRequest(request.id)}
                           className="text-sm text-red-600 hover:text-red-800"
                         >
                           Delete
-                        </button>
+                        </button> */}
                       </div>
                     </div>
                   );
@@ -494,14 +541,14 @@ const CustomerDashboard = () => {
                             Service requests: {vehicleRequests.length}
                           </div>
                         </div>
-                        <div>
+                        {/* <div>
                           <button
                             onClick={() => deleteVehicle(vehicle.id)}
                             className="text-sm text-red-600 hover:text-red-800"
                           >
                             Delete
                           </button>
-                        </div>
+                        </div> */}
                       </div>
                     </div>
                   );
