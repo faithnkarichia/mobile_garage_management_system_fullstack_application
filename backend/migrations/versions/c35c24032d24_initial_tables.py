@@ -1,8 +1,8 @@
-"""Initial migrations
+"""initial tables
 
-Revision ID: 46e1b4b951eb
+Revision ID: c35c24032d24
 Revises: 
-Create Date: 2025-06-16 14:46:51.015275
+Create Date: 2025-06-24 15:48:58.997129
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '46e1b4b951eb'
+revision = 'c35c24032d24'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -44,11 +44,16 @@ def upgrade():
     op.create_table('mechanics',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=100), nullable=False),
-    sa.Column('speciality', sa.String(length=100), nullable=False),
+    sa.Column('specialty', sa.String(length=100), nullable=False),
     sa.Column('location', sa.String(length=100), nullable=False),
     sa.Column('phone_number', sa.String(length=15), nullable=False),
+    sa.Column('status', sa.String(length=50), nullable=False),
+    sa.Column('email', sa.String(length=120), nullable=False),
+    sa.Column('experience_years', sa.Integer(), nullable=False),
+    sa.Column('rating', sa.Float(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('email')
     )
     op.create_table('users',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -84,7 +89,7 @@ def upgrade():
     sa.Column('completed_at', sa.DateTime(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.Column('customer_id', sa.Integer(), nullable=False),
-    sa.Column('vehicle_id', sa.Integer(), nullable=False),
+    sa.Column('vehicle_id', sa.Integer(), nullable=True),
     sa.Column('mechanic_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['customer_id'], ['customers.id'], ),
     sa.ForeignKeyConstraint(['mechanic_id'], ['mechanics.id'], ),

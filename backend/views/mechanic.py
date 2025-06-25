@@ -10,9 +10,13 @@ def mechanic_to_dict(mechanic):
     return {
         'id': mechanic.id,
         'name': mechanic.name,
-        'speciality': mechanic.speciality,
+        'specialty': mechanic.specialty,
         'location': mechanic.location,
         'phone_number': mechanic.phone_number,
+        'status': mechanic.status,
+        'email': mechanic.email,
+        'experience_years': mechanic.experience_years,
+        'rating': mechanic.rating,
         'created_at': mechanic.created_at.isoformat()
     }
 
@@ -47,7 +51,7 @@ def create_mechanic():
         return jsonify({'error': 'Unauthorized access'}), 403
     try:
         data = request.get_json()
-        if not data or not all(field in data for field in ['name', 'speciality', 'location', 'phone_number']):
+        if not data or not all(field in data for field in ['name', 'specialty', 'location', 'phone_number', 'email', 'experience_years','status']):
             return jsonify({'error': 'Missing required fields'}), 400
 
         phone = data['phone_number'].strip()
@@ -58,12 +62,24 @@ def create_mechanic():
             return jsonify({'error': 'Mechanic with this name already exists'}), 409
         if Mechanic.query.filter_by(phone_number=phone).first():
             return jsonify({'error': 'Mechanic with this phone number already exists'}), 409
+        if Mechanic.query.filter_by(email=data['email'].strip()).first():
+            return jsonify({'error': 'Mechanic with this email already exists'}), 409
+        if not re.fullmatch(r'^[\w\.-]+@[\w\.-]+\.\w+$', data['email'].strip()):
+            return jsonify({'error': 'Invalid email format'}), 400
+        if not isinstance(data['experience_years'], int) or data['experience_years'] < 0:
+            return jsonify({'error': 'Experience years must be a non-negative integer'}), 400
+        if data['status'].strip().title() not in ['Available', 'Unavailable']:
+            return jsonify({'error': 'Status must be either Available or Unavailable'}), 400
 
         new_mechanic = Mechanic(
             name=data['name'].strip(),
-            speciality=data['speciality'].strip(),
+            specialty=data['specialty'].strip(),
             location=data['location'].strip(),
-            phone_number=phone
+            phone_number=phone,
+            email=data['email'].strip(),
+            experience_years=data['experience_years'],
+            status=data['status'].strip(),
+            rating=data.get('rating', None),  # Optional field
         )
         db.session.add(new_mechanic)
         db.session.commit()
@@ -96,11 +112,11 @@ def update_mechanic(mechanic_id):
         mechanic.name = name
         updated = True
 
-    if 'speciality' in data:
-        speciality = data['speciality'].strip()
-        if not speciality:
-            return jsonify({'error': 'Speciality cannot be empty'}), 400
-        mechanic.speciality = speciality
+    if 'specialty' in data:
+        specialty = data['specialty'].strip()
+        if not specialty:
+            return jsonify({'error': 'Specialty cannot be empty'}), 400
+        mechanic.specialty = specialty
         updated = True
 
     if 'location' in data:
@@ -118,6 +134,34 @@ def update_mechanic(mechanic_id):
         if existing and existing.id != mechanic.id:
             return jsonify({'error': 'Phone number already in use'}), 409
         mechanic.phone_number = phone
+        updated = True
+
+    if 'email' in data:
+        email = data['email'].strip()
+        if not re.fullmatch(r'^[\w\.-]+@[\w\.-]+\.\w+$', email):
+            return jsonify({'error': 'Invalid email format'}), 400
+        existing = Mechanic.query.filter_by(email=email).first()
+        if existing and existing.id != mechanic.id:
+            return jsonify({'error': 'Email already in use'}), 409
+        mechanic.email = email
+        updated = True
+    if 'experience_years' in data:
+        experience_years = data['experience_years']
+        if not isinstance(experience_years, int) or experience_years < 0:
+            return jsonify({'error': 'Experience years must be a non-negative integer'}), 400
+        mechanic.experience_years = experience_years
+        updated = True
+    if 'status' in data:
+        status = data['status'].strip()
+        if status not in ['Available', 'Unavailable']:
+            return jsonify({'error': 'Status must be either Available or Unavailable'}), 400
+        mechanic.status = status
+        updated = True
+    if 'rating' in data:
+        rating = data['rating']
+        if rating is not None and (not isinstance(rating, (int, float)) or rating < 0 or rating > 5):
+            return jsonify({'error': 'Rating must be a number between 0 and 5'}), 400
+        mechanic.rating = rating
         updated = True
 
     if not updated:

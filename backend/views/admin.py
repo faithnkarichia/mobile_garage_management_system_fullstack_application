@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from models import Admin, db
+from models import Admin, db, User
 import re
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
@@ -97,8 +97,10 @@ def create_admin():
 
     try:
         data = request.get_json()
-        if not data or 'name' not in data or 'phone_number' not in data:
-            return jsonify({'error': 'Invalid data'}), 400
+        print(f"Received data for new admin: {data}")
+        
+        if not data or 'name' not in data or 'phone_number' not in data or 'users' not in data:
+            return jsonify({'error': 'Missing required fields'}), 400
 
         phone = data['phone_number'].strip()
         if not re.fullmatch(r'^\+?\d{10,15}$', phone):
@@ -109,14 +111,38 @@ def create_admin():
         if Admin.query.filter_by(phone_number=phone).first():
             return jsonify({'error': 'Admin with this phone number already exists'}), 409
 
+        # Create the Admin first
         new_admin = Admin(
             name=data['name'].strip(),
             phone_number=phone
         )
         db.session.add(new_admin)
+        db.session.flush()  # Get new_admin.id before committing
+
+        # Now create associated user(s)
+        for user_data in data['users']:
+            email = user_data.get('email', '').strip().lower()
+            password = user_data.get('password', '').strip()
+            role = user_data.get('role', '').strip().lower()
+
+            if not email or not password or role != 'admin':
+                return jsonify({'error': 'Invalid user data'}), 400
+
+            if User.query.filter_by(email=email).first():
+                return jsonify({'error': 'User with this email already exists'}), 409
+
+            new_user = User(
+                email=email,
+                password=password,
+                role='admin',
+                admin_id=new_admin.id
+            )
+            db.session.add(new_user)
+
         db.session.commit()
         return jsonify(new_admin.to_dict()), 201
 
     except Exception as e:
         db.session.rollback()
+        print(f"Error creating admin and user: {str(e)}")
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500

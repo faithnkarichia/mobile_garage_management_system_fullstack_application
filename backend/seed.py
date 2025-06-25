@@ -28,8 +28,28 @@ with app.app_context():
     db.session.commit()
 
     # Seed mechanics
-    mech1 = Mechanic(name="Bob Mechanic", speciality="Engine Repair", location="Nairobi", phone_number="0700333444")
-    mech2 = Mechanic(name="Charlie Mechanic", speciality="Brake Systems", location="Mombasa", phone_number="0700555666")
+    mech1 = Mechanic(
+    name="Bob Mechanic",
+    specialty="Engine Repair",
+    location="Nairobi",
+    phone_number="0700333444",
+    email="bob@example.com",
+    experience_years=5,
+    status="Available",
+    rating=4.5
+    )
+    mech2 = Mechanic(
+    name="Charlie Mechanic",
+    specialty="Brake Systems",
+    location="Mombasa",
+    phone_number="0700555666",
+    email="charlie@example.com",
+    experience_years=3,
+    status="Available",
+    rating=4.2
+    )   
+
+    
 
     db.session.add_all([mech1, mech2])
     db.session.commit()

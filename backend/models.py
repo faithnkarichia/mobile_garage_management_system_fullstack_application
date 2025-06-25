@@ -75,15 +75,21 @@ class Admin(db.Model, SerializerMixin):
         '-users.admin',
     )
 
+    
+
 
 class Mechanic(db.Model, SerializerMixin):
     __tablename__ = 'mechanics'
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    speciality = db.Column(db.String(100), nullable=False)
+    specialty = db.Column(db.String(100), nullable=False)
     location = db.Column(db.String(100), nullable=False)
     phone_number = db.Column(db.String(15), nullable=False)
+    status = db.Column(db.String(50), nullable=False, default='Available')
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    experience_years = db.Column(db.Integer, nullable=False)
+    rating = db.Column(db.Float, nullable=True)  
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     service_requests = db.relationship('ServiceRequest', backref='mechanic', lazy=True, cascade="all, delete")
@@ -127,6 +133,7 @@ class Inventory(db.Model, SerializerMixin):
     name = db.Column(db.String(100), nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
     price = db.Column(db.Float, nullable=False)
+    threshold = db.Column(db.Integer, nullable=False, default=5)  
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     service_requests = db.relationship('ServiceRequestInventory', backref='inventory', lazy=True, cascade="all, delete")

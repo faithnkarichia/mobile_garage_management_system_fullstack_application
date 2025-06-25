@@ -4,6 +4,7 @@ from datetime import datetime
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask import current_app
 from flask_mail import Message
+from sqlalchemy import func
 
 
 service_request_bp = Blueprint("service_request_bp", __name__)
@@ -20,7 +21,12 @@ def service_request_to_dict(req):
         'completed_at': req.completed_at.isoformat() if req.completed_at else None,
         'vehicle_id': req.vehicle_id,
         'mechanic_id': req.mechanic_id,
-        'customer_id': req.customer_id
+        'customer_id': req.customer_id,
+        'vehicle_details': {
+            'make': req.vehicle.make if req.vehicle else None,
+            'model': req.vehicle.model if req.vehicle else None,
+            'year_of_manufacture': req.vehicle.year_of_manufacture if req.vehicle else None,
+        } if req.vehicle else None
     }
 
 
@@ -80,7 +86,6 @@ def get_service_request_by_id(request_id):
     return jsonify(service_request_to_dict(req)), 200
 
 
-# create_service_request
 @service_request_bp.route('/service_requests', methods=['POST'])
 @jwt_required()
 def create_service_request():
@@ -99,31 +104,50 @@ def create_service_request():
         return jsonify({'error': 'Missing required fields'}), 400
 
     try:
-        
-        vehicle = Vehicle(
-            make=data['vehicle_details'].get('make', '').strip(),
-            model=data['vehicle_details'].get('model', '').strip(),
-            year_of_manufacture=int(data['vehicle_details'].get('year_of_manufacture', 0)),
-            customer_id=user.customer_id
-        )
-        db.session.add(vehicle)
-        db.session.commit()
+        # Extract and normalize vehicle details
+        make = data['vehicle_details'].get('make', '').strip().lower()
+        model = data['vehicle_details'].get('model', '').strip().lower()
+        year = int(data['vehicle_details'].get('year_of_manufacture', 0))
 
-        
+        # Check if vehicle already exists
+        existing_vehicle = Vehicle.query.filter(
+            func.lower(Vehicle.make) == make,
+            func.lower(Vehicle.model) == model,
+            Vehicle.year_of_manufacture == year,
+            Vehicle.customer_id == user.customer_id
+        ).first()
+
+        if existing_vehicle:
+            vehicle_id = existing_vehicle.id
+        else:
+            # Create new vehicle if it doesn't exist
+            new_vehicle = Vehicle(
+                make=make.title(),  # Store in title case (e.g., "Toyota")
+                model=model.title(),
+                year_of_manufacture=year,
+                customer_id=user.customer_id
+            )
+            db.session.add(new_vehicle)
+            db.session.commit()
+            vehicle_id = new_vehicle.id
+
+        # Create the service request
         new_req = ServiceRequest(
             issue=data['issue'].strip(),
             location=data['location'].strip(),
-            vehicle_id=vehicle.id,
+            vehicle_id=vehicle_id,
             customer_id=user.customer_id
         )
         db.session.add(new_req)
         db.session.commit()
+
         return jsonify(service_request_to_dict(new_req)), 201
 
+    except ValueError:
+        return jsonify({'error': 'Invalid year format'}), 400
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
-
 # update_service_request
 @service_request_bp.route('/service_requests/<int:request_id>', methods=['PUT'])
 @jwt_required()

@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
-from models import Vehicle, db
+from models import Vehicle, db,User
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from sqlalchemy import func
 
 vehicle_bp = Blueprint("vehicle_bp", __name__)
 
@@ -30,14 +31,20 @@ def get_vehicles():
 @jwt_required()
 def get_vehicles_by_customer(customer_id):
     identity = get_jwt_identity()
+
+    # Only customers can access
     if identity['role'] != 'customer':
         return jsonify({'error': 'Unauthorized access'}), 403
 
-    if identity['id'] != customer_id:
+    # ✅ Compare directly from the token
+    if identity.get('customer_id') != customer_id:
         return jsonify({'error': 'You can only access your own vehicles'}), 403
+
     vehicles = Vehicle.query.filter_by(customer_id=customer_id).all()
+
     if not vehicles:
         return jsonify({'message': 'No vehicles found for this customer'}), 404
+
     return jsonify([vehicle_to_dict(v) for v in vehicles]), 200
 
 @vehicle_bp.route('/vehicles/<int:vehicle_id>', methods=['GET'])
@@ -64,18 +71,42 @@ def create_vehicle():
     if not data or not all(field in data for field in required_fields):
         return jsonify({'error': 'Missing required fields'}), 400
 
+    # Convert year to integer for consistent comparison
+    try:
+        year = int(data['year_of_manufacture'])
+    except (ValueError, TypeError):
+        return jsonify({'error': 'Invalid year format'}), 400
+
+    # Check for existing vehicle with all matching fields
+    existing_vehicle = Vehicle.query.filter(
+        func.lower(Vehicle.make) == func.lower(data['make']),
+        func.lower(Vehicle.model) == func.lower(data['model']),
+        Vehicle.year_of_manufacture == year,
+        Vehicle.customer_id == identity['customer_id']
+    ).first()
+
+    if existing_vehicle:
+        return jsonify({
+            'exists': True,
+            'message': 'Vehicle already exists',
+            'vehicle': vehicle_to_dict(existing_vehicle)
+        }), 200
+
     new_vehicle = Vehicle(
-        make=data['make'],
-        model=data['model'],
-        year_of_manufacture=data['year_of_manufacture'],
-        customer_id=identity['id']  
+        make=data['make'].strip(),
+        model=data['model'].strip(),
+        year_of_manufacture=year,
+        customer_id=identity['customer_id']
     )
 
     db.session.add(new_vehicle)
     db.session.commit()
-    return jsonify(vehicle_to_dict(new_vehicle)), 201
-
-
+    
+    return jsonify({
+        'exists': False,
+        'message': 'Vehicle added successfully',
+        'vehicle': vehicle_to_dict(new_vehicle)
+    }), 201
 @vehicle_bp.route('/vehicles/<int:vehicle_id>', methods=['PUT'])
 @jwt_required()
 def update_vehicle(vehicle_id):
