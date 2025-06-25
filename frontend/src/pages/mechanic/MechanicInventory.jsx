@@ -20,7 +20,7 @@ console.log(searchTerm)
     const token = localStorage.getItem("access_token");
     console.log("Token:", token);
 
-    fetch(`{process.env.VITE_API_URL}/inventories`, {
+    fetch(`${import.meta.env.VITE_API_URL}/inventories`, {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
