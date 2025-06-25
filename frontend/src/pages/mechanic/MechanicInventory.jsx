@@ -52,7 +52,7 @@ console.log(searchTerm)
       const updatedQuantity = currentItem.quantity - useQuantity;
   
       
-      fetch(`${process.env.VITE_API_URL}/inventories/${currentItem.id}`, {
+      fetch(`${import.meta.env.VITE_API_URL}/inventories/${currentItem.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -72,7 +72,7 @@ console.log(searchTerm)
         })
         .then((updatedItem) => {
          
-          return fetch(`${process.env.VITE_API_URL}/service_request_inventories`, {
+          return fetch(`${import.meta.env.VITE_API_URL}/service_request_inventories`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",

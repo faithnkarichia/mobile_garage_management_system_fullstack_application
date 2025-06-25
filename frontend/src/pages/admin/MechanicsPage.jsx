@@ -34,7 +34,7 @@ export default function MechanicsPage() {
 
       try {
         setLoading(true);
-        const response = await fetch(`${process.env.VITE_API_URL}/mechanics`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/mechanics`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -71,7 +71,7 @@ export default function MechanicsPage() {
       ...newMechanic,experience_years: parseInt(newMechanic.experience_years, 10) || 0
     }
     
-    fetch(`${process.env.VITE_API_URL}/mechanics`, {
+    fetch(`${import.meta.env.VITE_API_URL}/mechanics`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -112,7 +112,7 @@ export default function MechanicsPage() {
   const handleEditMechanic = () => {
     const token = localStorage.getItem('access_token');
     
-    fetch(`${process.env.VITE_API_URL}/mechanics/${currentMechanic.id}`, {
+    fetch(`${import.meta.env.VITE_API_URL}/mechanics/${currentMechanic.id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',

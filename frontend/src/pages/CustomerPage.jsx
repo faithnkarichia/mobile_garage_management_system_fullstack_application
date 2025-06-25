@@ -44,7 +44,7 @@ const CustomerDashboard = () => {
     console.log("-----------", sub.id, sub.role, decoded);
 
    
-    fetch(`${process.env.VITE_API_URL}/service_requests`, {
+    fetch(`${import.meta.env.VITE_API_URL}/service_requests`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -60,7 +60,7 @@ const CustomerDashboard = () => {
         
         if (sub.role === "customer" && sub.customer_id) {
           return fetch(
-            `${process.env.VITE_API_URL}/vehicles/customer/${sub.customer_id}`,
+            `${import.meta.env.VITE_API_URL}/vehicles/customer/${sub.customer_id}`,
             {
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -130,7 +130,7 @@ const CustomerDashboard = () => {
       },
     };
 
-    fetch(`${process.env.VITE_API_URL}/service_requests`, {
+    fetch(`${import.meta.env.VITE_API_URL}/service_requests`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -186,7 +186,7 @@ const CustomerDashboard = () => {
     e.preventDefault();
     const token = localStorage.getItem("access_token");
 
-    const vehicles = fetch(`${process.env.VITE_API_URL}/vehicles`, {
+    const vehicles = fetch(`${import.meta.env.VITE_API_URL}/vehicles`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -228,7 +228,7 @@ const CustomerDashboard = () => {
     }
   
     try {
-      const response = await fetch(`${process.env.VITE_API_URL}/vehicles`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/vehicles`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -249,7 +249,7 @@ const CustomerDashboard = () => {
       if (result.exists) {
         
         const vehiclesResponse = await fetch(
-          `${process.env.VITE_API_URL}/vehicles/customer/${decoded.customer_id}`,
+          `${import.meta.env.VITE_API_URL}/vehicles/customer/${decoded.customer_id}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -300,7 +300,7 @@ const CustomerDashboard = () => {
       vehicle_id: editingRequest.vehicle_id,
     };
 
-    fetch(`${process.env.VITE_API_URL}/service_requests/${editingRequest.id}`, {
+    fetch(`${import.meta.env.VITE_API_URL}/service_requests/${editingRequest.id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -344,7 +344,7 @@ const CustomerDashboard = () => {
   // const deleteServiceRequest = (id) => {
   //   const token = localStorage.getItem("access_token");
 
-  //   fetch(`${process.env.VITE_API_URL}/service_requests/${id}`, {
+  //   fetch(`${import.meta.env.VITE_API_URL}/service_requests/${id}`, {
   //     method: "DELETE",
   //     headers: {
   //       "Content-Type": "application/json",
@@ -368,7 +368,7 @@ const CustomerDashboard = () => {
   // const deleteVehicle = (id) => {
   //   const token = localStorage.getItem("access_token");
 
-  //   fetch(`${process.env.VITE_API_URL}/vehicles/${id}`, {
+  //   fetch(`${import.meta.env.VITE_API_URL}/vehicles/${id}`, {
   //     method: "DELETE",
   //     headers: {
   //       "Content-Type": "application/json",

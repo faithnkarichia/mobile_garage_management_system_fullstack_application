@@ -20,7 +20,7 @@ const MechanicServiceRequests = () => {
   useEffect(() => {
     const token = localStorage.getItem("access_token");
     
-    fetch(`${process.env.VITE_API_URL}/service_requests`, {
+    fetch(`${import.meta.env.VITE_API_URL}/service_requests`, {
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",

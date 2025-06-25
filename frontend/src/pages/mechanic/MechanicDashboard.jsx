@@ -8,7 +8,7 @@ const MechanicDashboard = () => {
     const token = localStorage.getItem("access_token");
     const mechanicId = localStorage.getItem("mechanic_id");
 
-    fetch(`${process.env.VITE_API_URL}/mechanic/dashboard/${mechanicId}`, {
+    fetch(`${import.meta.env.VITE_API_URL}/mechanic/dashboard/${mechanicId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },

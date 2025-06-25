@@ -34,7 +34,7 @@ const InventoryPage = () => {
     const token = localStorage.getItem("access_token");
     console.log("Token:", token); // Debugging line to check token value
 
-    fetch(`${process.env.VITE_API_URL}/inventories`, {
+    fetch(`${import.meta.env.VITE_API_URL}/inventories`, {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
@@ -96,7 +96,7 @@ const InventoryPage = () => {
   const addInventoryItem = () => {
     const token = localStorage.getItem("access_token");
 
-    fetch(`${process.env.VITE_API_URL}/inventories`, {
+    fetch(`${import.meta.env.VITE_API_URL}/inventories`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -144,7 +144,7 @@ const InventoryPage = () => {
   const updateInventoryItem = () => {
     const token = localStorage.getItem("access_token");
 
-    fetch(`${process.env.VITE_API_URL}/inventories/${currentItem.id}`, {
+    fetch(`${import.meta.env.VITE_API_URL}/inventories/${currentItem.id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -184,7 +184,7 @@ const InventoryPage = () => {
   const restockInventoryItem = () => {
     const token = localStorage.getItem("access_token");
 
-    fetch(`${process.env.VITE_API_URL}/inventories/${currentItem.id}/restock`, {
+    fetch(`${import.meta.env.VITE_API_URL}/inventories/${currentItem.id}/restock`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
@@ -219,7 +219,7 @@ const InventoryPage = () => {
   const deleteInventoryItem = (id) => {
     const token = localStorage.getItem("access_token");
 
-    fetch(`${process.env.VITE_API_URL}/inventories/${id}`, {
+    fetch(`${import.meta.env.VITE_API_URL}/inventories/${id}`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",

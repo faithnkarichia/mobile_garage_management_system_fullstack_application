@@ -22,7 +22,7 @@ export default function AdminUsersPage() {
 
   const fetchAdmins = () => {
     const token = localStorage.getItem("access_token");
-    fetch(`${process.env.VITE_API_URL}/admins`, {
+    fetch(`${import.meta.env.VITE_API_URL}/admins`, {
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
@@ -52,7 +52,7 @@ export default function AdminUsersPage() {
       didOpen: () => Swal.showLoading()
     });
   
-    fetch(`${process.env.VITE_API_URL}/admins`, {
+    fetch(`${import.meta.env.VITE_API_URL}/admins`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -93,7 +93,7 @@ export default function AdminUsersPage() {
       password: currentAdmin.password,
     };
 
-    fetch(`${process.env.VITE_API_URL}/admins/${currentAdmin.id}`, {
+    fetch(`${import.meta.env.VITE_API_URL}/admins/${currentAdmin.id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -154,7 +154,7 @@ export default function AdminUsersPage() {
           didOpen: () => Swal.showLoading()
         });
   
-        fetch(`${process.env.VITE_API_URL}/admins/${adminId}`, {
+        fetch(`${import.meta.env.VITE_API_URL}/admins/${adminId}`, {
           method: "DELETE",
           headers: {
             Authorization: `Bearer ${token}`,

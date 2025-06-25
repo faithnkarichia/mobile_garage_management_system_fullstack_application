@@ -22,10 +22,10 @@ export default function ServiceRequestsPage() {
         setError(null);
         
         const [requestsRes, mechanicsRes] = await Promise.all([
-          fetch(`${process.env.VITE_API_URL}/service_requests`, {
+          fetch(`${import.meta.env.VITE_API_URL}/service_requests`, {
             headers: { Authorization: `Bearer ${token}` }
           }),
-          fetch(`${process.env.VITE_API_URL}/mechanics`, {
+          fetch(`${import.meta.env.VITE_API_URL}/mechanics`, {
             headers: { Authorization: `Bearer ${token}` }
           })
         ]);
@@ -56,7 +56,7 @@ export default function ServiceRequestsPage() {
     try {
       const token = localStorage.getItem("access_token");
       const response = await fetch(
-        `${process.env.VITE_API_URL}/service_requests/${requestId}`,
+        `${import.meta.env.VITE_API_URL}/service_requests/${requestId}`,
         {
           method: "PUT",
           headers: {
@@ -97,7 +97,7 @@ export default function ServiceRequestsPage() {
     try {
       const token = localStorage.getItem("access_token");
       const response = await fetch(
-        `${process.env.VITE_API_URL}/service_requests/${requestId}`,
+        `${import.meta.env.VITE_API_URL}/service_requests/${requestId}`,
         {
           method: "PUT",
           headers: {

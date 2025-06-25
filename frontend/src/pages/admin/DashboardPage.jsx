@@ -21,7 +21,7 @@ export default function DashboardPage() {
   useEffect(() => {
     const token = localStorage.getItem("access_token");
 
-    fetch(`${process.env.VITE_API_URL}/dashboard-stats`, {
+    fetch(`${import.meta.env.VITE_API_URL}/dashboard-stats`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },

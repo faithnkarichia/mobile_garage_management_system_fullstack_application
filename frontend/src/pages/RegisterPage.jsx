@@ -70,7 +70,7 @@ export default function RegisterPage() {
       }
     });
 
-    fetch(`${process.env.VITE_API_URL}/signup`, {
+    fetch(`${import.meta.env.VITE_API_URL}/signup`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

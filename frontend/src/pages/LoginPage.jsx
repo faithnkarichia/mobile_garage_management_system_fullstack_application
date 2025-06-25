@@ -36,34 +36,35 @@ export default function LoginPage() {
       }
     });
 
-    fetch(`${process.env.VITE_API_URL}/login`, {
+    fetch(`${import.meta.env.VITE_API_URL}/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        email: loginData.email, 
-        password: loginData.password
+        email: loginData.email,
+        password: loginData.password,
       }),
     })
-    .then(response => {
+    .then(async (response) => {
+      const isJson = response.headers.get("content-type")?.includes("application/json");
+      
       if (!response.ok) {
-        return response.json().then(err => {
-          throw new Error(err.error || 'Login failed');
-        });
+        const errorData = isJson ? await response.json() : {};
+        throw new Error(errorData.error || 'Login failed');
       }
-      return response.json();
+    
+      const data = isJson ? await response.json() : {};
+      return data;
     })
     .then(data => {
       if (data.access_token) {
         localStorage.setItem('access_token', data.access_token);
         const decoded = jwtDecode(data.access_token); 
         const role = decoded.sub.role;
-
-        
+    
         Swal.close();
-
-        
+    
         Swal.fire({
           title: 'Success!',
           text: 'You have successfully logged in.',
@@ -72,12 +73,10 @@ export default function LoginPage() {
           timer: 2000,
           timerProgressBar: true,
         }).then(() => {
-          
           if (role === 'admin') window.location.href = '/admin';
           else if (role === 'mechanic') window.location.href = '/mechanic';
           else window.location.href = '/customer';
         });
-
       } else {
         throw new Error('No access token received');
       }
@@ -85,8 +84,7 @@ export default function LoginPage() {
     .catch(error => {
       console.error('Login error:', error);
       setError(error.message || 'Login failed. Please try again.');
-      
-      
+    
       Swal.fire({
         title: 'Error!',
         text: error.message || 'Login failed. Please try again.',
@@ -97,6 +95,69 @@ export default function LoginPage() {
     .finally(() => {
       setIsSubmitting(false);
     });
+    
+
+    // fetch(`${import.meta.env.VITE_API_URL}/login`, {
+    //   method: 'POST',
+    //   headers: {
+    //     'Content-Type': 'application/json',
+    //   },
+    //   body: JSON.stringify({
+    //     email: loginData.email, 
+    //     password: loginData.password
+    //   }),
+    // })
+    // .then(response => {
+    //   if (!response.ok) {
+    //     return response.json().then(err => {
+    //       throw new Error(err.error || 'Login failed');
+    //     });
+    //   }
+    //   return response.json();
+    // })
+    // .then(data => {
+    //   if (data.access_token) {
+    //     localStorage.setItem('access_token', data.access_token);
+    //     const decoded = jwtDecode(data.access_token); 
+    //     const role = decoded.sub.role;
+
+        
+    //     Swal.close();
+
+        
+    //     Swal.fire({
+    //       title: 'Success!',
+    //       text: 'You have successfully logged in.',
+    //       icon: 'success',
+    //       confirmButtonText: 'Continue',
+    //       timer: 2000,
+    //       timerProgressBar: true,
+    //     }).then(() => {
+          
+    //       if (role === 'admin') window.location.href = '/admin';
+    //       else if (role === 'mechanic') window.location.href = '/mechanic';
+    //       else window.location.href = '/customer';
+    //     });
+
+    //   } else {
+    //     throw new Error('No access token received');
+    //   }
+    // })
+    // .catch(error => {
+    //   console.error('Login error:', error);
+    //   setError(error.message || 'Login failed. Please try again.');
+      
+      
+    //   Swal.fire({
+    //     title: 'Error!',
+    //     text: error.message || 'Login failed. Please try again.',
+    //     icon: 'error',
+    //     confirmButtonText: 'Try Again'
+    //   });
+    // })
+    // .finally(() => {
+    //   setIsSubmitting(false);
+    // });
   };
 
   return (
