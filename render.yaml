@@ -2,9 +2,6 @@ services:
   - type: web
     name: my-flask-app
     env: python
-    buildCommand: pip install -r requirements.txt
-    preDeployCommand: flask db upgrade
-    startCommand: gunicorn app:app
-    buildFilter:
-      paths:
-        - backend/
+    buildCommand: cd backend && pip install -r requirements.txt
+    preDeployCommand: cd backend && flask db upgrade
+    startCommand: cd backend && gunicorn app:app

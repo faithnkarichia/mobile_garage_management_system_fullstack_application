@@ -5,6 +5,3 @@ services:
     buildCommand: pip install -r requirements.txt
     preDeployCommand: flask db upgrade
     startCommand: gunicorn app:app
-    buildFilter:
-      paths:
-        - backend/
