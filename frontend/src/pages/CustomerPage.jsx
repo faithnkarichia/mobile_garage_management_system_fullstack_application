@@ -1,186 +1,365 @@
-import { useState } from 'react';
-import { Car, Wrench, Calendar, MapPin, Plus, Clock, Check, X } from 'lucide-react';
-
+import { useEffect, useState } from "react";
+import {
+  Car,
+  Wrench,
+  Calendar,
+  MapPin,
+  Plus,
+  Clock,
+  Check,
+  X,
+} from "lucide-react";
+import { jwtDecode } from "jwt-decode";
 const CustomerDashboard = () => {
-  // get and display the customer requests and vehicles
-  // enable customer to add new service requests and vehicles
-  // State for service requests
-  const [serviceRequests, setServiceRequests] = useState([
-    {
-      id: 1,
-      make: 'Toyota',
-      model: 'Camry',
-      year: '2020',
-      issue: 'Engine knocking sound',
-      location: '123 Main St, Anytown',
-      status: 'Pending',
-      createdAt: '2023-06-15 10:30 AM',
-      vehicleId: 1, // Link to vehicle
-    },
-    {
-      id: 2,
-      make: 'Honda',
-      model: 'Civic',
-      year: '2018',
-      issue: 'Brake pads replacement',
-      location: '456 Oak Ave, Somewhere',
-      status: 'In Progress',
-      createdAt: '2023-06-10 02:15 PM',
-      vehicleId: 2, // Link to vehicle
-    },
-  ]);
-
-  // State for vehicles
-  const [vehicles, setVehicles] = useState([
-    {
-      id: 1,
-      make: 'Toyota',
-      model: 'Camry',
-      year: '2020',
-      licensePlate: 'ABC123',
-      lastServiceDate: '2023-05-20',
-    },
-    {
-      id: 2,
-      make: 'Honda',
-      model: 'Civic',
-      year: '2018',
-      licensePlate: 'XYZ789',
-      lastServiceDate: '2023-04-15',
-    },
-  ]);
-
-  // State for forms
+  const [serviceRequests, setServiceRequests] = useState([]);
+  const [vehicles, setVehicles] = useState([]);
   const [showRequestForm, setShowRequestForm] = useState(false);
   const [showVehicleForm, setShowVehicleForm] = useState(false);
   const [editingRequest, setEditingRequest] = useState(null);
   const [newRequest, setNewRequest] = useState({
-    make: '',
-    model: '',
-    year: '',
-    issue: '',
-    location: '',
-    licensePlate: '', // Added license plate to request form
+    issue: "",
+    location: "",
+    vehicle_details: {
+      make: "",
+      model: "",
+      year_of_manufacture: "",
+    },
   });
   const [newVehicle, setNewVehicle] = useState({
-    make: '',
-    model: '',
-    year: '',
-    licensePlate: '',
+    make: "",
+    model: "",
+    year_of_manufacture: "",
   });
 
-  // Check if a vehicle exists based on make, model, year, and license plate
-  const vehicleExists = (make, model, year, licensePlate) => {
-    return vehicles.some(vehicle => 
-      vehicle.make.toLowerCase() === make.toLowerCase() &&
-      vehicle.model.toLowerCase() === model.toLowerCase() &&
-      vehicle.year === year &&
-      (licensePlate ? vehicle.licensePlate.toLowerCase() === licensePlate.toLowerCase() : true)
-    );
+  const fetchServiceRequestsAndVehicles = () => {
+    const token = localStorage.getItem("access_token");
+    if (!token) {
+      console.error("No token found.");
+      return;
+    }
+
+    const decoded = jwtDecode(token);
+    const { sub } = decoded;
+    console.log("-----------", sub.id, sub.role, decoded);
+
+    // Fetch service requests based on role
+    fetch("http://localhost:5555/service_requests", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch service requests");
+        return res.json();
+      })
+      .then((serviceRequests) => {
+        setServiceRequests(serviceRequests);
+        console.log("Service Requests:", serviceRequests);
+
+        // Only fetch vehicles if the user is a customer
+        if (sub.role === "customer" && sub.customer_id) {
+          return fetch(
+            `http://localhost:5555/vehicles/customer/${sub.customer_id}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+        } else {
+          return null; // Don't fetch vehicles for admin/mechanic
+        }
+      })
+      .then((res) => {
+        if (!res) return; // Skip if not a customer
+        if (!res.ok) throw new Error("Failed to fetch vehicles");
+        return res.json();
+      })
+      .then((vehicles) => {
+        if (vehicles) {
+          setVehicles(vehicles);
+          console.log("Vehicles:", vehicles);
+        }
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+      });
   };
 
-  // Find vehicle ID by details
-  const findVehicleId = (make, model, year, licensePlate) => {
-    const vehicle = vehicles.find(vehicle => 
-      vehicle.make.toLowerCase() === make.toLowerCase() &&
-      vehicle.model.toLowerCase() === model.toLowerCase() &&
-      vehicle.year === year &&
-      (licensePlate ? vehicle.licensePlate.toLowerCase() === licensePlate.toLowerCase() : true)
-    );
-    return vehicle ? vehicle.id : null;
-  };
+  // useEffect to run the fetch when the component mounts
+  useEffect(() => {
+    fetchServiceRequestsAndVehicles();
+  }, []);
 
-  // Handle service request form changes
   const handleRequestChange = (e) => {
     const { name, value } = e.target;
-    setNewRequest(prev => ({ ...prev, [name]: value }));
+
+    if (name.startsWith("vehicle_details.")) {
+      const field = name.split(".")[1];
+      setNewRequest((prev) => ({
+        ...prev,
+        vehicle_details: {
+          ...prev.vehicle_details,
+          [field]: value,
+        },
+      }));
+    } else {
+      setNewRequest((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
-  // Handle vehicle form changes
   const handleVehicleChange = (e) => {
     const { name, value } = e.target;
-    setNewVehicle(prev => ({ ...prev, [name]: value }));
+    setNewVehicle((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Submit new service request
+  // Submit new service request to backend
   const submitServiceRequest = (e) => {
     e.preventDefault();
-    const { make, model, year, licensePlate, issue, location } = newRequest;
-    
-    let vehicleId = findVehicleId(make, model, year, licensePlate);
-    let updatedVehicles = [...vehicles];
-    
-    // If vehicle doesn't exist, create it
-    if (!vehicleId) {
-      const newVehicleId = Math.max(...vehicles.map(v => v.id), 0) + 1;
-      const newVehicleToAdd = {
-        id: newVehicleId,
-        make,
-        model,
-        year,
-        licensePlate: licensePlate || 'N/A',
-        lastServiceDate: 'Never',
-      };
-      
-      updatedVehicles = [...vehicles, newVehicleToAdd];
-      vehicleId = newVehicleId;
-    }
-    
-    const newId = Math.max(...serviceRequests.map(r => r.id), 0) + 1;
-    const requestToAdd = {
-      ...newRequest,
-      id: newId,
-      vehicleId,
-      status: 'Pending',
-      createdAt: new Date().toLocaleString('en-US', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true
+    const token = localStorage.getItem("access_token");
+
+    // Create the request data with proper structure
+    const requestData = {
+      issue: newRequest.issue,
+      location: newRequest.location,
+      vehicle_details: {
+        make: newRequest.vehicle_details.make,
+        model: newRequest.vehicle_details.model,
+        year_of_manufacture: newRequest.vehicle_details.year_of_manufacture,
+      },
+    };
+
+    fetch("http://localhost:5555/service_requests", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(requestData),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Failed to create service request");
+        }
+        return response.json();
       })
-    };
-    
-    setVehicles(updatedVehicles);
-    setServiceRequests([...serviceRequests, requestToAdd]);
-    setNewRequest({ make: '', model: '', year: '', issue: '', location: '', licensePlate: '' });
-    setShowRequestForm(false);
+      .then((data) => {
+        // Update state with the new request
+        setServiceRequests((prevRequests) => [...prevRequests, data]);
+
+        // Reset form
+        setNewRequest({
+          issue: "",
+          location: "",
+          vehicle_details: {
+            make: "",
+            model: "",
+            year_of_manufacture: "",
+          },
+        });
+        setShowRequestForm(false);
+
+        // Refresh data
+        fetchServiceRequestsAndVehicles();
+      })
+      .catch((error) => {
+        console.error("Error creating service request:", error);
+      });
   };
 
-  // Submit new vehicle
-  const submitVehicle = (e) => {
+  const fetchVehicles = (e) => {
     e.preventDefault();
-    const newId = Math.max(...vehicles.map(v => v.id), 0) + 1;
-    const vehicleToAdd = {
-      ...newVehicle,
-      id: newId,
-      lastServiceDate: 'Never',
-    };
-    setVehicles([...vehicles, vehicleToAdd]);
-    setNewVehicle({ make: '', model: '', year: '', licensePlate: '' });
-    setShowVehicleForm(false);
+    const token = localStorage.getItem("access_token");
+
+    const vehicles = fetch("http://localhost:5555/vehicles", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(newVehicle),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Failed to create vehicle");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        setVehicles(vehicles);
+        setNewVehicle({ make: "", model: "", year_of_manufacture: "" });
+        setShowVehicleForm(false);
+      })
+      .catch((error) => {
+        console.error("Error creating vehicle:", error);
+      });
   };
 
-  // Update service request
+  // Submit new vehicle to backend
+  const submitVehicle = async (e) => {
+    e.preventDefault();
+    const token = localStorage.getItem("access_token");
+    const decoded = jwtDecode(token);
+  
+    // Validate required fields
+    if (!newVehicle.make || !newVehicle.model || !newVehicle.year_of_manufacture) {
+      alert("Please fill all required fields");
+      return;
+    }
+  
+    try {
+      const response = await fetch("http://localhost:5555/vehicles", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          ...newVehicle,
+          year_of_manufacture: parseInt(newVehicle.year_of_manufacture) || 0
+        }),
+      });
+  
+      const result = await response.json();
+  
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to process vehicle");
+      }
+  
+      if (result.exists) {
+        // Vehicle exists - refresh the list
+        const vehiclesResponse = await fetch(
+          `http://localhost:5555/vehicles/customer/${decoded.customer_id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        const updatedVehicles = await vehiclesResponse.json();
+        setVehicles(updatedVehicles);
+        alert("This vehicle already exists in your garage");
+      } else {
+        // New vehicle added
+        setVehicles([...vehicles, result.vehicle]);
+        alert("Vehicle added successfully");
+      }
+  
+      setNewVehicle({ make: "", model: "", year_of_manufacture: "" });
+      setShowVehicleForm(false);
+    } catch (error) {
+      console.error("Error processing vehicle:", error);
+      alert(error.message);
+    }
+  };
+
+  // Update service request in backend
   const updateServiceRequest = (e) => {
     e.preventDefault();
-    setServiceRequests(serviceRequests.map(request => 
-      request.id === editingRequest.id ? { ...editingRequest } : request
-    ));
-    setEditingRequest(null);
+    const token = localStorage.getItem("access_token");
+
+    // Prepare the data to send - only include editable fields for customers
+    const updateData = {
+      issue: editingRequest.issue,
+      location: editingRequest.location,
+      vehicle_id: editingRequest.vehicle_id,
+    };
+
+    fetch(`http://localhost:5555/service_requests/${editingRequest.id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(updateData),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Failed to update service request");
+        }
+        return response.json();
+      })
+      .then((updatedRequest) => {
+        setServiceRequests(
+          serviceRequests.map((request) =>
+            request.id === updatedRequest.id ? updatedRequest : request
+          )
+        );
+        setEditingRequest(null);
+        setShowRequestForm(false);
+      })
+      .catch((error) => {
+        console.error("Error updating service request:", error);
+      });
   };
 
-  // Get vehicle details by ID
+  // Delete service request from backend
+  const deleteServiceRequest = (id) => {
+    const token = localStorage.getItem("access_token");
+
+    fetch(`http://localhost:5555/service_requests/${id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Failed to delete service request");
+        }
+        setServiceRequests(
+          serviceRequests.filter((request) => request.id !== id)
+        );
+      })
+      .catch((error) => {
+        console.error("Error deleting service request:", error);
+      });
+  };
+
+  // Delete vehicle from backend
+  const deleteVehicle = (id) => {
+    const token = localStorage.getItem("access_token");
+
+    fetch(`http://localhost:5555/vehicles/${id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Failed to delete vehicle");
+        }
+        setVehicles(vehicles.filter((vehicle) => vehicle.id !== id));
+        // Also remove any service requests associated with this vehicle
+        setServiceRequests(
+          serviceRequests.filter((request) => request.vehicle_id !== id)
+        );
+      })
+      .catch((error) => {
+        console.error("Error deleting vehicle:", error);
+      });
+  };
+
   const getVehicleById = (id) => {
-    return vehicles.find(vehicle => vehicle.id === id);
+    return vehicles && vehicles.find((vehicle) => vehicle.id === id);
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "Not specified";
+    const date = new Date(dateString);
+    return date.toLocaleString();
   };
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Customer Dashboard</h1>
-        
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">
+          Customer Dashboard
+        </h1>
+
         {/* Dashboard Sections */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Service Requests Section */}
@@ -204,34 +383,48 @@ const CustomerDashboard = () => {
 
             {serviceRequests.length > 0 ? (
               <div className="space-y-4">
-                {serviceRequests.map(request => {
-                  const vehicle = getVehicleById(request.vehicleId);
+                {serviceRequests.map((request) => {
+                  const vehicle = getVehicleById(request.vehicle_id);
                   return (
-                    <div key={request.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
+                    <div
+                      key={request.id}
+                      className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition"
+                    >
                       <div className="flex justify-between items-start">
                         <div>
-                          <h3 className="font-medium text-gray-900">{request.make} {request.model} ({request.year})</h3>
-                          {vehicle && (
-                            <div className="text-sm text-gray-600 mt-1">
-                              License: {vehicle.licensePlate}
-                            </div>
-                          )}
-                          <p className="text-sm text-gray-600 mt-1">{request.issue}</p>
+                          <h3 className="font-medium text-gray-900">
+                            {vehicle
+                              ? `${vehicle.make} ${vehicle.model} (${vehicle.year_of_manufacture})`
+                              : "Vehicle not found"}
+                          </h3>
+                          <p className="text-sm text-gray-600 mt-1">
+                            {request.issue}
+                          </p>
                           <div className="flex items-center text-sm text-gray-500 mt-2">
                             <MapPin className="h-4 w-4 mr-1" />
                             {request.location}
                           </div>
                           <div className="flex items-center text-sm text-gray-500 mt-1">
                             <Clock className="h-4 w-4 mr-1" />
-                            {request.createdAt}
+                            Requested: {formatDate(request.requested_at)}
                           </div>
+                          {request.completed_at && (
+                            <div className="flex items-center text-sm text-gray-500 mt-1">
+                              <Check className="h-4 w-4 mr-1" />
+                              Completed: {formatDate(request.completed_at)}
+                            </div>
+                          )}
                         </div>
                         <div>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            request.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                            request.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
-                            'bg-green-100 text-green-800'
-                          }`}>
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              request.status === "Pending"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : request.status === "In Progress"
+                                ? "bg-blue-100 text-blue-800"
+                                : "bg-green-100 text-green-800"
+                            }`}
+                          >
                             {request.status}
                           </span>
                         </div>
@@ -245,6 +438,12 @@ const CustomerDashboard = () => {
                           className="text-sm text-blue-600 hover:text-blue-800"
                         >
                           Edit
+                        </button>
+                        <button
+                          onClick={() => deleteServiceRequest(request.id)}
+                          className="text-sm text-red-600 hover:text-red-800"
+                        >
+                          Delete
                         </button>
                       </div>
                     </div>
@@ -276,17 +475,33 @@ const CustomerDashboard = () => {
 
             {vehicles.length > 0 ? (
               <div className="space-y-4">
-                {vehicles.map(vehicle => {
-                  const vehicleRequests = serviceRequests.filter(req => req.vehicleId === vehicle.id);
+                {vehicles.map((vehicle) => {
+                  const vehicleRequests = serviceRequests.filter(
+                    (req) => req.vehicle_id === vehicle.id
+                  );
                   return (
-                    <div key={vehicle.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
-                      <h3 className="font-medium text-gray-900">{vehicle.make} {vehicle.model} ({vehicle.year})</h3>
-                      <div className="text-sm text-gray-600 mt-1">License: {vehicle.licensePlate}</div>
-                      <div className="text-sm text-gray-500 mt-2">
-                        Last serviced: {vehicle.lastServiceDate}
-                      </div>
-                      <div className="text-sm text-gray-500 mt-2">
-                        Service requests: {vehicleRequests.length}
+                    <div
+                      key={vehicle.id}
+                      className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition"
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="font-medium text-gray-900">
+                            {vehicle.make} {vehicle.model} (
+                            {vehicle.year_of_manufacture})
+                          </h3>
+                          <div className="text-sm text-gray-500 mt-2">
+                            Service requests: {vehicleRequests.length}
+                          </div>
+                        </div>
+                        <div>
+                          <button
+                            onClick={() => deleteVehicle(vehicle.id)}
+                            className="text-sm text-red-600 hover:text-red-800"
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
@@ -307,9 +522,11 @@ const CustomerDashboard = () => {
               <div className="p-6">
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-xl font-bold text-gray-900">
-                    {editingRequest ? 'Edit Service Request' : 'New Service Request'}
+                    {editingRequest
+                      ? "Edit Service Request"
+                      : "New Service Request"}
                   </h2>
-                  <button 
+                  <button
                     onClick={() => {
                       setShowRequestForm(false);
                       setEditingRequest(null);
@@ -320,104 +537,188 @@ const CustomerDashboard = () => {
                   </button>
                 </div>
 
-                <form onSubmit={editingRequest ? updateServiceRequest : submitServiceRequest}>
+                <form
+                  onSubmit={
+                    editingRequest ? updateServiceRequest : submitServiceRequest
+                  }
+                >
                   <div className="space-y-4">
+                    <h3 className="font-medium text-gray-900">
+                      Vehicle Details
+                    </h3>
+
                     <div>
-                      <label htmlFor="make" className="block text-sm font-medium text-gray-700 mb-1">
+                      <label
+                        htmlFor="vehicle_details.make"
+                        className="block text-sm font-medium text-gray-700 mb-1"
+                      >
                         Vehicle Make *
                       </label>
                       <input
                         type="text"
-                        id="make"
-                        name="make"
-                        value={editingRequest ? editingRequest.make : newRequest.make}
-                        onChange={editingRequest ? 
-                          (e) => setEditingRequest({...editingRequest, make: e.target.value}) : 
-                          handleRequestChange}
+                        id="vehicle_details.make"
+                        name="vehicle_details.make"
+                        value={
+                          editingRequest
+                            ? getVehicleById(editingRequest.vehicle_id)?.make ||
+                              ""
+                            : newRequest.vehicle_details.make
+                        }
+                        onChange={
+                          editingRequest
+                            ? (e) =>
+                                setEditingRequest({
+                                  ...editingRequest,
+                                  vehicle_details: {
+                                    ...editingRequest.vehicle_details,
+                                    make: e.target.value,
+                                  },
+                                })
+                            : handleRequestChange
+                        }
                         className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                         required
                       />
                     </div>
 
                     <div>
-                      <label htmlFor="model" className="block text-sm font-medium text-gray-700 mb-1">
+                      <label
+                        htmlFor="vehicle_details.model"
+                        className="block text-sm font-medium text-gray-700 mb-1"
+                      >
                         Vehicle Model *
                       </label>
                       <input
                         type="text"
-                        id="model"
-                        name="model"
-                        value={editingRequest ? editingRequest.model : newRequest.model}
-                        onChange={editingRequest ? 
-                          (e) => setEditingRequest({...editingRequest, model: e.target.value}) : 
-                          handleRequestChange}
+                        id="vehicle_details.model"
+                        name="vehicle_details.model"
+                        value={
+                          editingRequest
+                            ? getVehicleById(editingRequest.vehicle_id)
+                                ?.model || ""
+                            : newRequest.vehicle_details.model
+                        }
+                        onChange={
+                          editingRequest
+                            ? (e) =>
+                                setEditingRequest({
+                                  ...editingRequest,
+                                  vehicle_details: {
+                                    ...editingRequest.vehicle_details,
+                                    model: e.target.value,
+                                  },
+                                })
+                            : handleRequestChange
+                        }
                         className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                         required
                       />
                     </div>
 
                     <div>
-                      <label htmlFor="year" className="block text-sm font-medium text-gray-700 mb-1">
+                      <label
+                        htmlFor="year_of_manufacture"
+                        className="block text-sm font-medium text-gray-700 mb-1"
+                      >
                         Year of Manufacture *
                       </label>
                       <input
-                        type="text"
-                        id="year"
-                        name="year"
-                        value={editingRequest ? editingRequest.year : newRequest.year}
-                        onChange={editingRequest ? 
-                          (e) => setEditingRequest({...editingRequest, year: e.target.value}) : 
-                          handleRequestChange}
+                        type="number"
+                        id="year_of_manufacture"
+                        name="year_of_manufacture"
+                        min="1900"
+                        max={new Date().getFullYear() + 1}
+                        value={
+                          editingRequest
+                            ? getVehicleById(editingRequest.vehicle_id)
+                                ?.year_of_manufacture || ""
+                            : newRequest.vehicle_details.year_of_manufacture ||
+                              ""
+                        }
+                        onChange={(e) => {
+                          const year = parseInt(e.target.value) || "";
+                          if (editingRequest) {
+                            setEditingRequest({
+                              ...editingRequest,
+                              vehicle_details: {
+                                ...editingRequest.vehicle_details,
+                                year_of_manufacture: year,
+                              },
+                            });
+                          } else {
+                            setNewRequest({
+                              ...newRequest,
+                              vehicle_details: {
+                                ...newRequest.vehicle_details,
+                                year_of_manufacture: year,
+                              },
+                            });
+                          }
+                        }}
                         className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                         required
                       />
                     </div>
 
-                    <div>
-                      <label htmlFor="licensePlate" className="block text-sm font-medium text-gray-700 mb-1">
-                        License Plate
-                      </label>
-                      <input
-                        type="text"
-                        id="licensePlate"
-                        name="licensePlate"
-                        value={editingRequest ? (getVehicleById(editingRequest.vehicleId)?.licensePlate || '') : newRequest.licensePlate}
-                        onChange={editingRequest ? 
-                          (e) => setEditingRequest({...editingRequest, licensePlate: e.target.value}) : 
-                          handleRequestChange}
-                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
+                    <h3 className="font-medium text-gray-900 mt-6">
+                      Service Details
+                    </h3>
 
                     <div>
-                      <label htmlFor="issue" className="block text-sm font-medium text-gray-700 mb-1">
+                      <label
+                        htmlFor="issue"
+                        className="block text-sm font-medium text-gray-700 mb-1"
+                      >
                         Issue Description *
                       </label>
                       <textarea
                         id="issue"
                         name="issue"
                         rows="3"
-                        value={editingRequest ? editingRequest.issue : newRequest.issue}
-                        onChange={editingRequest ? 
-                          (e) => setEditingRequest({...editingRequest, issue: e.target.value}) : 
-                          handleRequestChange}
+                        value={
+                          editingRequest
+                            ? editingRequest.issue
+                            : newRequest.issue
+                        }
+                        onChange={
+                          editingRequest
+                            ? (e) =>
+                                setEditingRequest({
+                                  ...editingRequest,
+                                  issue: e.target.value,
+                                })
+                            : handleRequestChange
+                        }
                         className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                         required
                       />
                     </div>
 
                     <div>
-                      <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">
+                      <label
+                        htmlFor="location"
+                        className="block text-sm font-medium text-gray-700 mb-1"
+                      >
                         Service Location *
                       </label>
                       <input
                         type="text"
                         id="location"
                         name="location"
-                        value={editingRequest ? editingRequest.location : newRequest.location}
-                        onChange={editingRequest ? 
-                          (e) => setEditingRequest({...editingRequest, location: e.target.value}) : 
-                          handleRequestChange}
+                        value={
+                          editingRequest
+                            ? editingRequest.location
+                            : newRequest.location
+                        }
+                        onChange={
+                          editingRequest
+                            ? (e) =>
+                                setEditingRequest({
+                                  ...editingRequest,
+                                  location: e.target.value,
+                                })
+                            : handleRequestChange
+                        }
                         className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                         required
                       />
@@ -439,7 +740,7 @@ const CustomerDashboard = () => {
                       type="submit"
                       className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
                     >
-                      {editingRequest ? 'Update Request' : 'Submit Request'}
+                      {editingRequest ? "Update Request" : "Submit Request"}
                     </button>
                   </div>
                 </form>
@@ -454,8 +755,10 @@ const CustomerDashboard = () => {
             <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
               <div className="p-6">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-bold text-gray-900">Add New Vehicle</h2>
-                  <button 
+                  <h2 className="text-xl font-bold text-gray-900">
+                    Add New Vehicle
+                  </h2>
+                  <button
                     onClick={() => setShowVehicleForm(false)}
                     className="text-gray-500 hover:text-gray-700 rounded-full p-1 hover:bg-gray-100"
                   >
@@ -466,12 +769,15 @@ const CustomerDashboard = () => {
                 <form onSubmit={submitVehicle}>
                   <div className="space-y-4">
                     <div>
-                      <label htmlFor="vMake" className="block text-sm font-medium text-gray-700 mb-1">
+                      <label
+                        htmlFor="make"
+                        className="block text-sm font-medium text-gray-700 mb-1"
+                      >
                         Make *
                       </label>
                       <input
                         type="text"
-                        id="vMake"
+                        id="make"
                         name="make"
                         value={newVehicle.make}
                         onChange={handleVehicleChange}
@@ -481,12 +787,15 @@ const CustomerDashboard = () => {
                     </div>
 
                     <div>
-                      <label htmlFor="vModel" className="block text-sm font-medium text-gray-700 mb-1">
+                      <label
+                        htmlFor="model"
+                        className="block text-sm font-medium text-gray-700 mb-1"
+                      >
                         Model *
                       </label>
                       <input
                         type="text"
-                        id="vModel"
+                        id="model"
                         name="model"
                         value={newVehicle.model}
                         onChange={handleVehicleChange}
@@ -496,29 +805,17 @@ const CustomerDashboard = () => {
                     </div>
 
                     <div>
-                      <label htmlFor="vYear" className="block text-sm font-medium text-gray-700 mb-1">
-                        Year *
+                      <label
+                        htmlFor="year_of_manufacture"
+                        className="block text-sm font-medium text-gray-700 mb-1"
+                      >
+                        Year of Manufacture *
                       </label>
                       <input
-                        type="text"
-                        id="vYear"
-                        name="year"
-                        value={newVehicle.year}
-                        onChange={handleVehicleChange}
-                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label htmlFor="licensePlate" className="block text-sm font-medium text-gray-700 mb-1">
-                        License Plate *
-                      </label>
-                      <input
-                        type="text"
-                        id="licensePlate"
-                        name="licensePlate"
-                        value={newVehicle.licensePlate}
+                        type="number"
+                        id="year_of_manufacture"
+                        name="year_of_manufacture"
+                        value={newVehicle.year_of_manufacture}
                         onChange={handleVehicleChange}
                         className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                         required

@@ -1,58 +1,57 @@
-import { useState } from 'react';
-import { Wrench, Clock, Check, X, Search, ChevronDown, ChevronUp, Calendar, User, Car, AlertCircle } from 'lucide-react';
+import { useEffect, useState } from "react";
+import {
+  Wrench,
+  Clock,
+  Check,
+  X,
+  Search,
+  ChevronDown,
+  ChevronUp,
+  Calendar,
+  User,
+  Car,
+  AlertCircle,
+} from "lucide-react";
 
 const MechanicServiceRequests = () => {
-  const [serviceRequests, setServiceRequests] = useState([
-    {
-      id: 1,
-      vehicle: 'Toyota Camry 2020',
-      issue: 'Oil change and filter replacement',
-      status: 'In Progress',
-      createdAt: '2023-06-15 10:30 AM',
-      customer: 'John Doe',
-      customerPhone: '(555) 123-4567',
-      customerEmail: 'john.doe@example.com',
-      priority: 'Medium',
-      notes: 'Customer requested synthetic oil. Check for any leaks during service.',
-      estimatedCompletion: '2023-06-16 04:00 PM',
-      partsRequired: [
-        { name: 'Oil Filter', partNumber: 'OF-1234', quantity: 1 },
-        { name: 'Synthetic Oil 5W-30', partNumber: 'OIL-5W30', quantity: 5 }
-      ]
-    },
-    {
-      id: 2,
-      vehicle: 'Honda Civic 2018',
-      issue: 'Brake pad replacement',
-      status: 'Assigned',
-      createdAt: '2023-06-16 02:15 PM',
-      customer: 'Jane Smith',
-      customerPhone: '(555) 987-6543',
-      customerEmail: 'jane.smith@example.com',
-      priority: 'High',
-      notes: 'Customer reported squeaking noise when braking. Inspect rotors as well.',
-      estimatedCompletion: '2023-06-17 11:00 AM',
-      partsRequired: [
-        { name: 'Front Brake Pads', partNumber: 'BP-HC18-F', quantity: 1 },
-        { name: 'Brake Cleaner', partNumber: 'BC-500', quantity: 1 }
-      ]
-    }
-  ]);
+  const [serviceRequests, setServiceRequests] = useState([]);
+  useEffect(() => {
+    const token = localStorage.getItem("access_token");
+    console.log("Fetching service requests with token:", token);
+    fetch("http://localhost:5555/service_requests", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        setServiceRequests(data);
+        console.log("Service Requests:", data);
+      })
+      .catch((error) => {
+        console.error("Error fetching service requests:", error);
+      });
+  }, []);
 
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-
-  const filteredRequests = serviceRequests.filter(request =>
-    request.vehicle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    request.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    request.issue.toLowerCase().includes(searchTerm.toLowerCase())
+  console.log("Service Requests:-----------------", serviceRequests);
+  const filteredRequests = serviceRequests && serviceRequests.length > 0 && serviceRequests.filter(
+    (request) =>
+      (request.vehicle && request.vehicle.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (request.customer && request.customer.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (request.issue && request.issue.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+  
 
   const updateRequestStatus = (id, newStatus) => {
-    setServiceRequests(serviceRequests.map(request =>
-      request.id === id ? { ...request, status: newStatus } : request
-    ));
+    setServiceRequests(
+      serviceRequests.map((request) =>
+        request.id === id ? { ...request, status: newStatus } : request
+      )
+    );
   };
 
   const openDetails = (request) => {
@@ -68,8 +67,10 @@ const MechanicServiceRequests = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">My Service Requests</h1>
-        
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">
+          My Service Requests
+        </h1>
+
         <div className="mb-6">
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -90,56 +91,86 @@ const MechanicServiceRequests = () => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Issue</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Vehicle
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Customer
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Issue
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Priority
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredRequests.map((request) => (
+                {filteredRequests && filteredRequests.map((request) => (
                   <tr key={request.id}>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{request.vehicle}</div>
-                      <div className="text-sm text-gray-500">{request.createdAt}</div>
+                      <div className="text-sm font-medium text-gray-900">
+                      {`${request.vehicle_details.make} ${request.vehicle_details.model}, ${request.vehicle_details.year_of_manufacture}`}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {request.createdAt}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{request.customer}</div>
+                      <div className="text-sm text-gray-900">
+                        {request.customer_id}
+                      </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">{request.issue}</div>
+                      <div className="text-sm text-gray-900">
+                        {request.issue}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        request.priority === 'High' ? 'bg-red-100 text-red-800' :
-                        request.priority === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-green-100 text-green-800'
-                      }`}>
+                      <span
+                        className={`px-2 py-1 text-xs rounded-full ${
+                          request.priority === "High"
+                            ? "bg-red-100 text-red-800"
+                            : request.priority === "Medium"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : "bg-green-100 text-green-800"
+                        }`}
+                      >
                         {request.priority}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        request.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                        request.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
+                      <span
+                        className={`px-2 py-1 text-xs rounded-full ${
+                          request.status === "Completed"
+                            ? "bg-green-100 text-green-800"
+                            : request.status === "In Progress"
+                            ? "bg-blue-100 text-blue-800"
+                            : "bg-gray-100 text-gray-800"
+                        }`}
+                      >
                         {request.status}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex space-x-2">
-                        {request.status !== 'Completed' && (
+                        {request.status !== "Completed" && (
                           <button
-                            onClick={() => updateRequestStatus(request.id, 'Completed')}
+                            onClick={() =>
+                              updateRequestStatus(request.id, "Completed")
+                            }
                             className="text-green-600 hover:text-green-900 flex items-center"
                           >
                             <Check className="h-4 w-4 mr-1" /> Complete
                           </button>
                         )}
-                        <button 
+                        <button
                           onClick={() => openDetails(request)}
                           className="text-blue-600 hover:text-blue-900 flex items-center"
                         >
@@ -161,8 +192,10 @@ const MechanicServiceRequests = () => {
           <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-start">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">Service Request Details</h2>
-                <button 
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                  Service Request Details
+                </h2>
+                <button
                   onClick={closeDetails}
                   className="text-gray-500 hover:text-gray-700"
                 >
@@ -176,7 +209,9 @@ const MechanicServiceRequests = () => {
                   <div className="flex items-start">
                     <Car className="h-5 w-5 text-blue-500 mt-0.5 mr-3" />
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">Vehicle Information</h3>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        Vehicle Information
+                      </h3>
                       <p className="text-gray-700">{selectedRequest.vehicle}</p>
                     </div>
                   </div>
@@ -184,17 +219,27 @@ const MechanicServiceRequests = () => {
                   <div className="flex items-start">
                     <User className="h-5 w-5 text-blue-500 mt-0.5 mr-3" />
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">Customer Details</h3>
-                      <p className="text-gray-700">{selectedRequest.customer}</p>
-                      <p className="text-gray-600">{selectedRequest.customerPhone}</p>
-                      <p className="text-gray-600">{selectedRequest.customerEmail}</p>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        Customer Details
+                      </h3>
+                      <p className="text-gray-700">
+                        {selectedRequest.customer}
+                      </p>
+                      <p className="text-gray-600">
+                        {selectedRequest.customerPhone}
+                      </p>
+                      <p className="text-gray-600">
+                        {selectedRequest.customerEmail}
+                      </p>
                     </div>
                   </div>
 
                   <div className="flex items-start">
                     <AlertCircle className="h-5 w-5 text-blue-500 mt-0.5 mr-3" />
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">Reported Issue</h3>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        Reported Issue
+                      </h3>
                       <p className="text-gray-700">{selectedRequest.issue}</p>
                     </div>
                   </div>
@@ -205,20 +250,30 @@ const MechanicServiceRequests = () => {
                   <div className="flex items-start">
                     <Calendar className="h-5 w-5 text-blue-500 mt-0.5 mr-3" />
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">Timing</h3>
-                      <p className="text-gray-700">Created: {selectedRequest.createdAt}</p>
-                      <p className="text-gray-700">Estimated Completion: {selectedRequest.estimatedCompletion}</p>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        Timing
+                      </h3>
+                      <p className="text-gray-700">
+                        Created: {selectedRequest.createdAt}
+                      </p>
+                      <p className="text-gray-700">
+                        Estimated Completion:{" "}
+                        {selectedRequest.estimatedCompletion}
+                      </p>
                     </div>
                   </div>
 
                   <div className="flex items-start">
                     <Wrench className="h-5 w-5 text-blue-500 mt-0.5 mr-3" />
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">Parts Required</h3>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        Parts Required
+                      </h3>
                       <ul className="list-disc pl-5 text-gray-700">
                         {selectedRequest.partsRequired.map((part, index) => (
                           <li key={index}>
-                            {part.name} (PN: {part.partNumber}) - Qty: {part.quantity}
+                            {part.name} (PN: {part.partNumber}) - Qty:{" "}
+                            {part.quantity}
                           </li>
                         ))}
                       </ul>
@@ -229,7 +284,9 @@ const MechanicServiceRequests = () => {
 
               {/* Notes Section */}
               <div className="mt-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Additional Notes</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  Additional Notes
+                </h3>
                 <div className="bg-gray-50 p-4 rounded-md">
                   <p className="text-gray-700">{selectedRequest.notes}</p>
                 </div>
@@ -238,25 +295,33 @@ const MechanicServiceRequests = () => {
               {/* Status Section */}
               <div className="mt-6 flex justify-between items-center">
                 <div>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    selectedRequest.priority === 'High' ? 'bg-red-100 text-red-800' :
-                    selectedRequest.priority === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-green-100 text-green-800'
-                  }`}>
+                  <span
+                    className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      selectedRequest.priority === "High"
+                        ? "bg-red-100 text-red-800"
+                        : selectedRequest.priority === "Medium"
+                        ? "bg-yellow-100 text-yellow-800"
+                        : "bg-green-100 text-green-800"
+                    }`}
+                  >
                     Priority: {selectedRequest.priority}
                   </span>
-                  <span className={`ml-3 px-3 py-1 rounded-full text-sm font-medium ${
-                    selectedRequest.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                    selectedRequest.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
+                  <span
+                    className={`ml-3 px-3 py-1 rounded-full text-sm font-medium ${
+                      selectedRequest.status === "Completed"
+                        ? "bg-green-100 text-green-800"
+                        : selectedRequest.status === "In Progress"
+                        ? "bg-blue-100 text-blue-800"
+                        : "bg-gray-100 text-gray-800"
+                    }`}
+                  >
                     Status: {selectedRequest.status}
                   </span>
                 </div>
-                {selectedRequest.status !== 'Completed' && (
+                {selectedRequest.status !== "Completed" && (
                   <button
                     onClick={() => {
-                      updateRequestStatus(selectedRequest.id, 'Completed');
+                      updateRequestStatus(selectedRequest.id, "Completed");
                       closeDetails();
                     }}
                     className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center"

@@ -1,74 +1,176 @@
-import { useState } from 'react';
-import { Shield, Mail, Phone, UserPlus, X } from "lucide-react";
-
-const initialAdminUsers = [
-  {
-    id: 1,
-    name: "Admin User",
-    email: "admin@autocarepro.com",
-    phone: "(555) 123-4567",
-    role: "Super Admin",
-    lastLogin: "2023-06-15 09:30 AM",
-  },
-  {
-    id: 2,
-    name: "Shop Manager",
-    email: "manager@autocarepro.com",
-    phone: "(555) 234-5678",
-    role: "Manager",
-    lastLogin: "2023-06-14 02:15 PM",
-  },
-  {
-    id: 3,
-    name: "Service Coordinator",
-    email: "coordinator@autocarepro.com",
-    phone: "(555) 345-6789",
-    role: "Coordinator",
-    lastLogin: "2023-06-15 08:45 AM",
-  },
-];
+import { useState, useEffect } from "react";
+import { Shield, Mail, Phone, UserPlus, X, Edit, Trash2 } from "lucide-react";
 
 export default function AdminUsersPage() {
-  const [adminUsers, setAdminUsers] = useState(initialAdminUsers);
+  const [adminUsers, setAdminUsers] = useState([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [currentAdmin, setCurrentAdmin] = useState(null);
+  
   const [newAdmin, setNewAdmin] = useState({
     name: "",
     email: "",
     phone: "",
-    role: "Coordinator",
+    role: "Admin",
+    password: "adminpass", 
   });
 
-  const handleAddAdmin = () => {
-    const newId = Math.max(...adminUsers.map(user => user.id)) + 1;
-    const adminToAdd = {
-      ...newAdmin,
-      id: newId,
-      lastLogin: new Date().toLocaleString('en-US', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true
+  useEffect(() => {
+    const token = localStorage.getItem("access_token");
+    fetch("http://localhost:5555/admins", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        return response.json();
       })
+      .then((data) => {
+        setAdminUsers(data);
+      })
+      .catch((error) => {
+        console.error("Error fetching admin users:", error);
+      });
+  }, []);
+
+  const handleAddAdmin = () => {
+
+    const requestData = {
+      name: newAdmin.name,
+      phone_number: newAdmin.phone,  // Note field name change
+      users: [
+        {
+          email: newAdmin.email,
+          role: newAdmin.role,
+          password: "adminpass"  // You might need to include this
+        }
+      ]
+    };
+    const token = localStorage.getItem("access_token");
+    
+    fetch("http://localhost:5555/admins", {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(requestData)
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Failed to add admin');
+      }
+      return response.json();
+    })
+    .then(() => {
+      // Refresh the list after adding
+      return fetch("http://localhost:5555/admins", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      return response.json();
+    })
+    .then((data) => {
+      setAdminUsers(data);
+      setIsAddModalOpen(false);
+      setNewAdmin({
+        name: "",
+        email: "",
+        phone: "",
+        role: "Admin",
+      });
+    })
+    .catch(error => {
+      console.error('Error adding admin:', error.message);
+    });
+  };
+
+  const handleEditAdmin = () => {
+    const token = localStorage.getItem("access_token");
+    const requestData = {
+      name: currentAdmin.name,
+      phone_number: currentAdmin.phone,
+      users: [
+        {
+          email: currentAdmin.email,
+          role: currentAdmin.role,
+          // Include password if required, or omit if not needed for updates
+        }
+      ]
     };
     
-    setAdminUsers([...adminUsers, adminToAdd]);
-    setIsAddModalOpen(false);
-    setNewAdmin({
-      name: "",
-      email: "",
-      phone: "",
-      role: "Coordinator",
+    fetch(`http://localhost:5555/admins/${currentAdmin.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(requestData)
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Failed to update admin');
+      }
+      return response.json();
+    })
+    .then(() => {
+      // Refresh the list after editing
+      return fetch("http://localhost:5555/admins", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      return response.json();
+    })
+    .then((data) => {
+      setAdminUsers(data);
+      setIsEditModalOpen(false);
+    })
+    .catch(error => {
+      console.error('Error updating admin:', error);
     });
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setNewAdmin(prev => ({
+    setNewAdmin((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleEditInputChange = (e) => {
+    const { name, value } = e.target;
+    setCurrentAdmin(prev => ({
       ...prev,
       [name]: value
     }));
+  };
+
+  const openEditModal = (admin) => {
+    setCurrentAdmin({
+      ...admin,
+      email: admin.users[0].email,
+      role: admin.users[0].role
+    });
+    setIsEditModalOpen(true);
   };
 
   return (
@@ -76,7 +178,7 @@ export default function AdminUsersPage() {
       {/* Header Section */}
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-gray-900">Admin Users</h1>
-        <button 
+        <button
           onClick={() => setIsAddModalOpen(true)}
           className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition flex items-center shadow-md"
         >
@@ -100,9 +202,6 @@ export default function AdminUsersPage() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Role
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Last Login
-                </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
@@ -121,7 +220,7 @@ export default function AdminUsersPage() {
                           {user.name}
                         </div>
                         <div className="text-sm text-gray-500">
-                          {user.email}
+                          {user && user.users.length == 0 && user.users[0] && user.users[0].email}
                         </div>
                       </div>
                     </div>
@@ -129,27 +228,27 @@ export default function AdminUsersPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <div className="flex items-center">
                       <Phone className="h-4 w-4 mr-2 text-gray-400" />
-                      {user.phone}
+                      {user.phone_number}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
                       className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        user.role === "Super Admin"
+                        user && user.users.length == 0  && user.users[0] && user.users[0].role === "Super Admin"
                           ? "bg-purple-100 text-purple-800"
-                          : user.role === "Manager"
+                          : user.users[0].role === "Manager"
                           ? "bg-blue-100 text-blue-800"
                           : "bg-green-100 text-green-800"
                       }`}
                     >
-                      {user.role}
+                      {user.users[0].role}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {user.lastLogin}
-                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button className="text-blue-600 hover:text-blue-800 mr-3">
+                    <button 
+                      onClick={() => openEditModal(user)}
+                      className="text-blue-600 hover:text-blue-800 mr-3"
+                    >
                       Edit
                     </button>
                     <button className="text-gray-600 hover:text-gray-800">
@@ -169,8 +268,10 @@ export default function AdminUsersPage() {
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">Add New Admin</h2>
-                <button 
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Add New Admin
+                </h2>
+                <button
                   onClick={() => setIsAddModalOpen(false)}
                   className="text-gray-500 hover:text-gray-700 rounded-full p-1 hover:bg-gray-100"
                   aria-label="Close modal"
@@ -181,7 +282,10 @@ export default function AdminUsersPage() {
 
               <div className="space-y-4">
                 <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor="name"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Full Name *
                   </label>
                   <input
@@ -197,7 +301,10 @@ export default function AdminUsersPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor="email"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Email *
                   </label>
                   <input
@@ -205,6 +312,7 @@ export default function AdminUsersPage() {
                     id="email"
                     name="email"
                     value={newAdmin.email}
+                   
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     required
@@ -213,7 +321,10 @@ export default function AdminUsersPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor="phone"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Phone *
                   </label>
                   <input
@@ -229,21 +340,35 @@ export default function AdminUsersPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor="role"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Role *
                   </label>
-                  <select
-                    id="role"
-                    name="role"
-                    value={newAdmin.role}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="Super Admin">Super Admin</option>
-                    <option value="Manager">Manager</option>
-                    <option value="Coordinator">Coordinator</option>
-                  </select>
+                  <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100">
+  Admin
+</div>
+<input type="hidden" name="role" value="Admin" /> 
                 </div>
+                <div>
+  <label
+    htmlFor="password"
+    className="block text-sm font-medium text-gray-700 mb-1"
+  >
+    Password *
+  </label>
+  <input
+    type="password"
+    id="password"
+    name="password"
+    value={newAdmin.password}
+    onChange={handleInputChange}
+    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+    required
+    placeholder="Enter a secure password"
+  />
+</div>
               </div>
 
               <div className="mt-6 flex justify-end space-x-3">
@@ -257,10 +382,12 @@ export default function AdminUsersPage() {
                   onClick={handleAddAdmin}
                   className={`px-4 py-2 rounded-md text-sm font-medium text-white ${
                     !newAdmin.name || !newAdmin.email || !newAdmin.phone
-                      ? 'bg-blue-400 cursor-not-allowed'
-                      : 'bg-blue-600 hover:bg-blue-700'
+                      ? "bg-blue-400 cursor-not-allowed"
+                      : "bg-blue-600 hover:bg-blue-700"
                   }`}
-                  disabled={!newAdmin.name || !newAdmin.email || !newAdmin.phone}
+                  disabled={
+                    !newAdmin.name || !newAdmin.email || !newAdmin.phone
+                  }
                 >
                   Add Admin
                 </button>
@@ -269,6 +396,126 @@ export default function AdminUsersPage() {
           </div>
         </div>
       )}
+
+      {/* Edit Admin Modal */}
+      {isEditModalOpen && currentAdmin && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Edit Admin
+                </h2>
+                <button
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="text-gray-500 hover:text-gray-700 rounded-full p-1 hover:bg-gray-100"
+                  aria-label="Close modal"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label
+                    htmlFor="edit-name"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Full Name *
+                  </label>
+                  <input
+                    type="text"
+                    id="edit-name"
+                    name="name"
+                    value={currentAdmin.name}
+                    onChange={handleEditInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="edit-email"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Email *
+                  </label>
+                  <input
+                    type="email"
+                    id="edit-email"
+                    name="email"
+                    value={currentAdmin.email}
+                    onChange={handleEditInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="edit-phone"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Phone *
+                  </label>
+                  <input
+                    type="tel"
+                    id="edit-phone"
+                    name="phone"
+                    value={currentAdmin.phone}
+                    onChange={handleEditInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="edit-role"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Role *
+                  </label>
+                  <select
+                    id="edit-role"
+                    name="role"
+                    value={currentAdmin.role}
+                    onChange={handleEditInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="Super Admin">Super Admin</option>
+                    <option value="Manager">Manager</option>
+                    <option value="Coordinator">Coordinator</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-end space-x-3">
+                <button
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleEditAdmin}
+                  className={`px-4 py-2 rounded-md text-sm font-medium text-white ${
+                    !currentAdmin.name || !currentAdmin.email || !currentAdmin.phone
+                      ? "bg-blue-400 cursor-not-allowed"
+                      : "bg-blue-600 hover:bg-blue-700"
+                  }`}
+                  disabled={
+                    !currentAdmin.name || !currentAdmin.email || !currentAdmin.phone
+                  }
+                >
+                  Save Changes
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
-}
+}   

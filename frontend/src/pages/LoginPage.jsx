@@ -1,5 +1,6 @@
 import { User, Lock } from "lucide-react";
 import React, { useState } from "react";
+import { jwtDecode } from 'jwt-decode';
 
 export default function LoginPage() {
   const [loginData, setLoginData] = useState({
@@ -45,7 +46,17 @@ export default function LoginPage() {
     .then(data => {
       if (data.access_token) {  // Changed from accessToken to access_token to match Flask
         localStorage.setItem('access_token', data.access_token);
-        window.location.href = '/customer';
+        const decoded = jwtDecode(data.access_token); 
+    console.log('Decoded JWT:', decoded);
+
+    const role = decoded.sub.role;
+    console.log('User role:', role);
+
+    // Redirect based on role
+    if (role === 'admin') window.location.href = '/admin';
+    else if (role === 'mechanic') window.location.href = '/mechanic';
+    else window.location.href = '/customer';  // Default
+
       } else {
         throw new Error('No access token received');
       }

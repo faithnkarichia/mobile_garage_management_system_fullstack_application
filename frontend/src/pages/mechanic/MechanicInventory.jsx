@@ -1,13 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Search, Package, Minus, X } from 'lucide-react';
 
 const MechanicInventory = () => {
-  const [inventory, setInventory] = useState([
-    { id: 1, name: 'Engine Oil 5W-30', category: 'Lubricants', quantity: 42, price: 29.99 },
-    { id: 2, name: 'Brake Pads Set', category: 'Brakes', quantity: 15, price: 45.50 },
-    { id: 3, name: 'Air Filter', category: 'Filters', quantity: 28, price: 18.75 },
-    { id: 4, name: 'Spark Plug', category: 'Ignition', quantity: 63, price: 8.99 },
-  ]);
+  const [inventory, setInventory] = useState([]);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [isUseModalOpen, setIsUseModalOpen] = useState(false);
@@ -19,6 +14,30 @@ const MechanicInventory = () => {
     item.category.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+useEffect(()=>{
+  const token = localStorage.getItem('access_token');
+  console.log('Token:', token);
+
+  fetch('http://localhost:5555/inventories', {
+    headers:{
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    }
+
+  })
+
+  .then(response => response.json())
+  .then(data => {
+    console.log('Fetched inventory:', data);
+    setInventory(data);
+  }
+  )
+  .catch(error => {
+    console.error('Error fetching inventory:', error);
+  }
+  );
+},[])
+
   const openUseModal = (item) => {
     setCurrentItem(item);
     setUseQuantity(1);
@@ -26,13 +45,45 @@ const MechanicInventory = () => {
   };
 
   const handleUseInventory = () => {
+    console.log('Using inventory item:', currentItem);
     if (useQuantity > 0 && useQuantity <= currentItem.quantity) {
-      setInventory(inventory.map(item =>
-        item.id === currentItem.id 
-          ? { ...item, quantity: item.quantity - useQuantity } 
-          : item
-      ));
-      setIsUseModalOpen(false);
+      const token = localStorage.getItem('access_token');
+      const updatedQuantity = currentItem.quantity - useQuantity;
+      
+      fetch(`http://localhost:5555/inventories/${currentItem.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          inventory: {
+            quantity: updatedQuantity
+          }
+        })
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Failed to update inventory');
+        }
+        return response.json();
+      })
+      .then(updatedItem => {
+        console.log('Inventory updated successfully:', updatedItem);
+        // Update local state with the response from server
+        setInventory(inventory.map(item =>
+          item.id === currentItem.id ? updatedItem : item
+        ));
+        setIsUseModalOpen(false);
+        setUseQuantity(0); // Reset the use quantity input
+      })
+      .catch(error => {
+        console.error('Error updating inventory:', error);
+        // Optionally show error to user
+      });
+    } else {
+      // Handle invalid quantity (show error message, etc.)
+      console.error('Invalid quantity entered');
     }
   };
 
@@ -62,7 +113,7 @@ const MechanicInventory = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                  {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th> */}
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Available</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -80,9 +131,9 @@ const MechanicInventory = () => {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    {/* <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">{item.category}</div>
-                    </td>
+                    </td> */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className={`text-sm font-medium ${
                         item.quantity <= 5 ? 'text-red-600' : 'text-gray-900'
