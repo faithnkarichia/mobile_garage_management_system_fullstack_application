@@ -27,6 +27,7 @@ const MechanicDashboard = () => {
     fetch(`${import.meta.env.VITE_API_URL}/mechanics/dashboard`, {
       headers: {
         Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json"
       },
     })
       .then((res) => {
