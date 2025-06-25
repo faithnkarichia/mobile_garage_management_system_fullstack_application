@@ -1,6 +1,6 @@
 from app import app  # Assuming you have your app instance in app.py
 from models import db, Customer, Vehicle, Admin, Mechanic, User, ServiceRequest, Inventory, ServiceRequestInventory
-from datetime import datetime
+from datetime import datetime, timezone
 
 with app.app_context():
     # Wipe database
@@ -82,7 +82,7 @@ with app.app_context():
         issue="Engine overheating",
         status="Pending",
         location="Nairobi",
-        requested_at=datetime.utcnow(),
+        requested_at=datetime.now(timezone.utc),
         customer_id=cust1.id,
         vehicle_id=vehicle1.id,
         mechanic_id=mech1.id
@@ -92,7 +92,7 @@ with app.app_context():
         issue="Brake failure",
         status="Pending",
         location="Mombasa",
-        requested_at=datetime.utcnow(),
+        requested_at=datetime.now(timezone.utc),
         customer_id=cust2.id,
         vehicle_id=vehicle2.id,
         mechanic_id=mech2.id
