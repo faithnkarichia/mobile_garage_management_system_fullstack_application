@@ -107,7 +107,7 @@ with app.app_context():
     link2 = ServiceRequestInventory(
         service_request_id=req2.id, inventory_id=inv1.id, used_quantity=1)
 
-db.session.add_all([link1, link2])
-db.session.commit()
+    db.session.add_all([link1, link2])
+    db.session.commit()
 
-print("✅ Database seeded successfully!")
+    print("✅ Database seeded successfully!")
