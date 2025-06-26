@@ -15,6 +15,7 @@ import {
   Settings,
   UserCog,
   Boxes,
+  Package,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
@@ -88,7 +89,7 @@ export default function AdminLayout({ children }) {
     { name: "Mechanics", icon: Users, path: "/admin/mechanics" },
     // { name: "Schedule", icon: Calendar, path: "/admin/schedule" },
     { name: "Admin Users", icon: UserCog, path: "/admin/users" },
-    { name: "Inventory", icon: Boxes, path: "/admin/inventory" },
+    { name: "Inventory", icon: Package, path: "/admin/inventory" },
   ];
 
   const handleLogout = () => {

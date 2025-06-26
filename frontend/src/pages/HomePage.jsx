@@ -1,6 +1,35 @@
-import { Wrench, ChevronRight, Car, Users, ClipboardCheck, Star, User } from "lucide-react";
+import { jwtDecode } from "jwt-decode";
+import {
+  Wrench,
+  ChevronRight,
+  Car,
+  Users,
+  ClipboardCheck,
+  Star,
+  User,
+} from "lucide-react";
+import { useEffect, useState } from "react";
 
 export default function HomePage() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [role, setRole] = useState('')
+
+  useEffect(() => {
+    const token = localStorage.getItem("access_token");
+
+    console.log('odododododo', token)
+    setIsLoggedIn(!!token);
+
+    if (token) {
+        try {
+          const decoded = jwtDecode(token);
+          setRole(decoded.sub.role);
+        } catch (e) {
+          console.log("token expired!", e.message);
+        }
+    }
+  }, []);
+
   return (
     <>
       {/* Hero Section */}
@@ -26,7 +55,6 @@ export default function HomePage() {
               platform. Customers, mechanics, and admins all in one seamless
               system.
             </p>
-           
           </div>
         </div>
       </section>
@@ -123,6 +151,23 @@ export default function HomePage() {
           <button className="px-8 py-4 rounded-lg bg-primary-500 text-white hover:bg-primary-600 transition text-lg font-medium">
             Get Started Today <ChevronRight className="ml-2 h-5 w-5 inline" />
           </button>
+
+          {isLoggedIn && role && (
+            <button
+              onClick={() => {
+                if (role === "admin") {
+                  window.location.href = "/admin";
+                } else if (role === "mechanic") {
+                  window.location.href = "/mechanic";
+                } else if (role === "customer") {
+                  window.location.href = "/customer";
+                }
+              }}
+              className="mt-4 px-8 py-4 rounded-lg bg-green-500 text-white hover:bg-green-600 transition text-lg font-medium"
+            >
+              Go to Dashboard
+            </button>
+          )}
         </div>
       </section>
     </>
@@ -130,22 +175,22 @@ export default function HomePage() {
 }
 
 const testimonials = [
-    {
-      text: "This platform made scheduling my car service so easy! I could track the progress every step of the way.",
-      name: "Sarah Johnson",
-      role: "Regular Customer",
-      rating: 5,
-    },
-    {
-      text: "As a mechanic, this system saves me so much time. All the job details are in one place and easy to access.",
-      name: "Mike Rodriguez",
-      role: "Master Mechanic",
-      rating: 4,
-    },
-    {
-      text: "Managing our shop has never been easier. The admin dashboard gives me complete control over all operations.",
-      name: "Lisa Chen",
-      role: "Shop Owner",
-      rating: 5,
-    },
-  ];
+  {
+    text: "This platform made scheduling my car service so easy! I could track the progress every step of the way.",
+    name: "Sarah Johnson",
+    role: "Regular Customer",
+    rating: 5,
+  },
+  {
+    text: "As a mechanic, this system saves me so much time. All the job details are in one place and easy to access.",
+    name: "Mike Rodriguez",
+    role: "Master Mechanic",
+    rating: 4,
+  },
+  {
+    text: "Managing our shop has never been easier. The admin dashboard gives me complete control over all operations.",
+    name: "Lisa Chen",
+    role: "Shop Owner",
+    rating: 5,
+  },
+];
