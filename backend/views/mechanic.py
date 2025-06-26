@@ -1,12 +1,14 @@
 from flask import Blueprint, request, jsonify
-from models import Mechanic, db, ServiceRequest,User
+from models import Mechanic, db, ServiceRequest, User, Inventory, ServiceRequestInventory
 import re
-from flask_jwt_extended import jwt_required, get_jwt_identity   
-from app import bcrypt                                                                                                                                                                                                                     
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from app import bcrypt
 
 mechanic_bp = Blueprint("mechanic_bp", __name__)
 
 # Utility function for safe dict
+
+
 def mechanic_to_dict(mechanic):
     return {
         'id': mechanic.id,
@@ -21,6 +23,7 @@ def mechanic_to_dict(mechanic):
         'created_at': mechanic.created_at.isoformat()
     }
 
+
 @mechanic_bp.route('/mechanics', methods=['GET'])
 @jwt_required()
 def get_mechanics():
@@ -33,6 +36,7 @@ def get_mechanics():
         return jsonify({'message': 'No mechanics found'}), 404
     return jsonify([mechanic_to_dict(m) for m in mechanics]), 200
 
+
 @mechanic_bp.route('/mechanics/<int:mechanic_id>', methods=['GET'])
 @jwt_required()
 def get_mechanic_by_id(mechanic_id):
@@ -43,6 +47,7 @@ def get_mechanic_by_id(mechanic_id):
     if not mechanic:
         return jsonify({'error': 'Mechanic not found'}), 404
     return jsonify(mechanic_to_dict(mechanic)), 200
+
 
 @mechanic_bp.route('/mechanics', methods=['POST'])
 @jwt_required()
@@ -126,6 +131,7 @@ def create_mechanic():
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
+
 
 @mechanic_bp.route('/mechanics/<int:mechanic_id>', methods=['PUT'])
 @jwt_required()
@@ -221,31 +227,117 @@ def update_mechanic(mechanic_id):
 #     return jsonify({'message': 'Mechanic deleted successfully'}), 200
 
 
-
 # backend/routes/mechanic_stats.py
-@mechanic_bp.route('/dashboard/<int:mechanic_id>', methods=['GET'])
+# @mechanic_bp.route('/dashboard/<int:mechanic_id>', methods=['GET'])
+# @jwt_required()
+# def mechanic_dashboard_data(mechanic_id):
+#     identity = get_jwt_identity()
+#     if identity['role'] != 'mechanic':
+#         return jsonify({'error': 'Unauthorized access'}), 403
+
+#     mechanic = Mechanic.query.get(mechanic_id)
+#     if not mechanic:
+#         return jsonify({'error': 'Mechanic not found'}), 404
+
+#     service_requests = ServiceRequest.query.filter_by(
+#         mechanic_id=mechanic.id).all()
+
+#     total_tasks = len(service_requests)
+#     total_hours = 0.0
+
+#     for req in service_requests:
+#         if req.completed_at:
+#             duration = req.completed_at - req.requested_at
+#             total_hours += round(duration.total_seconds() / 3600, 2)
+
+#     return jsonify({
+#         'assigned_tasks': total_tasks,
+#         'hours_worked': total_hours
+#     }), 200
+
+
+@mechanic_bp.route('/mechanics/dashboard', methods=['GET'])
 @jwt_required()
-def mechanic_dashboard_data(mechanic_id):
+def mechanic_dashboard_data():
     identity = get_jwt_identity()
+    print('kkkkkk', identity)
+    # First verify the user is a mechanic
     if identity['role'] != 'mechanic':
         return jsonify({'error': 'Unauthorized access'}), 403
 
-    mechanic = Mechanic.query.get(mechanic_id)
+    # Get the user record to find the mechanic_id
+    user = User.query.get(identity['id'])
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    # Get the mechanic record using the mechanic_id from user
+    mechanic = Mechanic.query.get(user.mechanic_id)
     if not mechanic:
         return jsonify({'error': 'Mechanic not found'}), 404
 
-    service_requests = ServiceRequest.query.filter_by(mechanic_id=mechanic.id).all()
+    # Get all service requests for this mechanic
+    service_requests = ServiceRequest.query.filter_by(
+        mechanic_id=mechanic.id).all()
 
+    # Calculate basic stats
     total_tasks = len(service_requests)
-    total_hours = 0.0
+    completed_tasks = len(
+        [r for r in service_requests if r.status == 'Completed'])
+    pending_tasks = len([r for r in service_requests if r.status == 'Pending'])
+    in_progress_tasks = len(
+        [r for r in service_requests if r.status == 'In Progress'])
 
-    for req in service_requests:
-        if req.completed_at:
-            duration = req.completed_at - req.requested_at
-            total_hours += round(duration.total_seconds() / 3600, 2)
+    # Calculate hours worked
+    total_hours = 0.0
+    completed_requests = [r for r in service_requests if r.completed_at]
+    for req in completed_requests:
+        duration = req.completed_at - req.requested_at
+        total_hours += round(duration.total_seconds() / 3600, 2)
+
+    # Get recent tasks (last 5)
+    recent_tasks = sorted(
+        service_requests, key=lambda x: x.requested_at, reverse=True)[:5]
+
+    # Calculate inventory used
+    inventory_used = db.session.query(
+        Inventory.name,
+        db.func.sum(ServiceRequestInventory.used_quantity).label('total_used'))
+    inventory_used = db.session.query(
+        Inventory.name,
+        db.func.sum(ServiceRequestInventory.used_quantity).label(
+            'total_used')
+    ).join(ServiceRequestInventory, Inventory.id == ServiceRequestInventory.inventory_id) \
+     .join(ServiceRequest, ServiceRequestInventory.service_request_id == ServiceRequest.id) \
+     .filter(ServiceRequest.mechanic_id == mechanic.id) \
+     .group_by(Inventory.name) \
+     .all()
 
     return jsonify({
-        'assigned_tasks': total_tasks,
-        'hours_worked': total_hours
+        'mechanic_info': {
+            'id': mechanic.id,
+            'name': mechanic.name,
+            'specialty': mechanic.specialty,
+            'rating': mechanic.rating,
+            'status': mechanic.status,
+            'experience_years': mechanic.experience_years
+        },
+        'stats': {
+            'total_tasks': total_tasks,
+            'completed_tasks': completed_tasks,
+            'pending_tasks': pending_tasks,
+            'in_progress_tasks': in_progress_tasks,
+            'hours_worked': total_hours,
+            'completion_rate': round((completed_tasks / total_tasks * 100), 2) if total_tasks > 0 else 0
+        },
+        'recent_tasks': [{
+            'id': task.id,
+            'issue': task.issue,
+            'status': task.status,
+            'requested_at': task.requested_at.isoformat(),
+            'vehicle': f"{task.vehicle.make} {task.vehicle.model}" if task.vehicle else 'N/A'
+        } for task in recent_tasks],
+        'inventory_used': [{
+            'name': item.name,
+            'total_used': item.total_used
+        } for item in inventory_used]
     }), 200
-

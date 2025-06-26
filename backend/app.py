@@ -23,7 +23,7 @@ migrate = Migrate(app, db)
 db.init_app(app)
 bcrypt = Bcrypt(app)
 # jwt = JWTManager(app)
-CORS(app)
+CORS(app, origins="*", supports_credentials=True)
 
 
 # mail configurations
