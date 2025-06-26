@@ -189,3 +189,29 @@ def dashboard_stats():
         'today_appointments': today_appointments,
     })
 
+
+# GET /admin/users/{user_id} - Get admin user details
+@admin_bp.route('/admin/users/<int:user_id>', methods=['GET'])
+@jwt_required()
+def get_admin_user(user_id):
+    identity = get_jwt_identity()
+    print(identity)
+    if identity['role'] != 'admin':
+        return jsonify({'error': 'Unauthorized'}), 403
+    print(user_id)
+    # uuser data - adminid
+    user=User.query.filter_by(id=user_id).first()
+    print(user.__dict__)
+    admin = Admin.query.filter_by(id=user.admin_id).first()
+    print('aaaadmin',admin)
+    if not admin:
+        print('aaaadmin',admin)
+        return jsonify({'error': 'Admin not found'}), 404
+    
+    return jsonify({
+        'id': admin.id,
+        'name': admin.name,
+        'email': admin.users[0].email if admin.users else None,
+        'role': 'admin'
+    }), 200
+

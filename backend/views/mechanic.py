@@ -214,46 +214,7 @@ def update_mechanic(mechanic_id):
     db.session.commit()
     return jsonify(mechanic_to_dict(mechanic)), 200
 
-# @mechanic_bp.route('/mechanics/<int:id>/assign')
 
-
-# @mechanic_bp.route('/mechanics/<int:mechanic_id>', methods=['DELETE'])
-# def delete_mechanic(mechanic_id):
-#     mechanic = Mechanic.query.get(mechanic_id)
-#     if not mechanic:
-#         return jsonify({'error': 'Mechanic not found'}), 404
-#     db.session.delete(mechanic)
-#     db.session.commit()
-#     return jsonify({'message': 'Mechanic deleted successfully'}), 200
-
-
-# backend/routes/mechanic_stats.py
-# @mechanic_bp.route('/dashboard/<int:mechanic_id>', methods=['GET'])
-# @jwt_required()
-# def mechanic_dashboard_data(mechanic_id):
-#     identity = get_jwt_identity()
-#     if identity['role'] != 'mechanic':
-#         return jsonify({'error': 'Unauthorized access'}), 403
-
-#     mechanic = Mechanic.query.get(mechanic_id)
-#     if not mechanic:
-#         return jsonify({'error': 'Mechanic not found'}), 404
-
-#     service_requests = ServiceRequest.query.filter_by(
-#         mechanic_id=mechanic.id).all()
-
-#     total_tasks = len(service_requests)
-#     total_hours = 0.0
-
-#     for req in service_requests:
-#         if req.completed_at:
-#             duration = req.completed_at - req.requested_at
-#             total_hours += round(duration.total_seconds() / 3600, 2)
-
-#     return jsonify({
-#         'assigned_tasks': total_tasks,
-#         'hours_worked': total_hours
-#     }), 200
 
 
 @mechanic_bp.route('/mechanics/dashboard', methods=['GET'])
@@ -340,4 +301,29 @@ def mechanic_dashboard_data():
             'name': item.name,
             'total_used': item.total_used
         } for item in inventory_used]
+    }), 200
+
+
+
+# GET /mechanic/users/{user_id} - Get mechanic user details
+@mechanic_bp.route('/mechanic/users/<int:user_id>', methods=['GET'])
+@jwt_required()
+def get_mechanic_user(user_id):
+    identity = get_jwt_identity()
+    if identity['role'] != 'mechanic':
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    user = User.query.filter_by(id=user_id).first()
+    mechanic = Mechanic.query.filter_by(id=user.mechanic_id).first()
+    
+    if not mechanic:
+        return jsonify({'error': 'Mechanic not found'}), 404
+    
+    return jsonify({
+        'id': mechanic.id,
+        'name': mechanic.name,
+        'email': user.email,
+        'role': 'mechanic',
+        'specialty': mechanic.specialty,
+        'experience_years': mechanic.experience_years
     }), 200

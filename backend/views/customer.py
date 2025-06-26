@@ -12,7 +12,7 @@ customer_bp = Blueprint("customer_bp", __name__)
 @jwt_required()
 def get_customers():
     identity = get_jwt_identity()
-    print(f"Identity: {identity}")  # Debugging line to check identity
+    print(f"Identity: {identity}")  
     if identity['role'] != 'admin':
         return jsonify({'error': 'Unauthorized access'}), 403
     customers = Customer.query.all()
@@ -49,35 +49,6 @@ def get_customer(customer_id):
 
     return jsonify(customer_data), 200
 
-
-# CREATE customer
-# @customer_bp.route('/customers', methods=['POST'])
-# def create_customer():
-#     data = request.get_json()
-#     if not data or 'name' not in data or 'phone_number' not in data or 'location' not in data:
-#         return jsonify({'error': 'Missing required fields'}), 400
-
-#     name = data['name'].strip()
-#     phone = data['phone_number'].strip()
-#     location = data['location'].strip()
-
-#     if not name:
-#         return jsonify({'error': 'Name cannot be empty'}), 400
-#     if not location:
-#         return jsonify({'error': 'Location cannot be empty'}), 400
-#     if not re.fullmatch(r'^\+?\d{10,15}$', phone):
-#         return jsonify({'error': 'Invalid phone number format'}), 400
-
-#     # Duplicate checks
-#     if Customer.query.filter_by(name=name).first():
-#         return jsonify({'error': 'Customer with this name already exists'}), 409
-#     if Customer.query.filter_by(phone_number=phone).first():
-#         return jsonify({'error': 'Customer with this phone number already exists'}), 409
-
-#     new_customer = Customer(name=name, phone_number=phone, location=location)
-#     db.session.add(new_customer)
-#     db.session.commit()
-#     return jsonify(new_customer.to_dict()), 201
 
 # UPDATE customer
 

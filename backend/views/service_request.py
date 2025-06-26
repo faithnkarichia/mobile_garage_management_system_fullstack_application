@@ -183,6 +183,13 @@ def update_service_request(request_id):
 
     if identity['role'] == 'admin':
         allowed_fields = ['mechanic_id', 'status']
+
+    elif identity['role'] == 'mechanic':
+   
+        if not user or not user.mechanic_id or req.mechanic_id != user.mechanic_id:
+            return jsonify({'error': 'Unauthorized to update this request'}), 403
+        allowed_fields = ['status']
+
     elif identity['role'] == 'customer':
         if not user or not user.customer_id or req.customer_id != user.customer_id:
             return jsonify({'error': 'Unauthorized to update this request'}), 403

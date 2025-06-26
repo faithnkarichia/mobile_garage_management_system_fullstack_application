@@ -49,44 +49,8 @@ def get_user_by_id(user_id):
     return jsonify(user_to_dict(user)), 200
 
 
-# @user_bp.route('/users', methods=['POST'])
-# @jwt_required()
-# def create_user():
-#     identity = get_jwt_identity()
-#     if identity['role'] != 'admin':
-#         return jsonify({'error': 'Unauthorized access'}), 403
-#     data = request.get_json()
-#     required_fields = ['email', 'password', 'role']
-#     if not data or not all(field in data for field in required_fields):
-#         return jsonify({'error': 'Missing required fields'}), 400
 
-#     email = data['email'].strip().lower()
-#     if not re.fullmatch(r'^[^@]+@[^@]+\.[^@]+$', email):
-#         return jsonify({'error': 'Invalid email format'}), 400
 
-#     if User.query.filter_by(email=email).first():
-#         return jsonify({'error': 'Email already exists'}), 409
-
-#     if data['role'] not in ['customer', 'admin', 'mechanic']:
-#         return jsonify({'error': 'Invalid role'}), 400
-
-#     plaintext_password = data['password']
-
-#     hashed_password = bcrypt.generate_password_hash(
-#         plaintext_password).decode('utf-8')
-
-#     new_user = User(
-#         email=email,
-#         password=hashed_password,
-#         role=data['role'],
-#         customer_id=data.get('customer_id'),
-#         admin_id=data.get('admin_id'),
-#         mechanic_id=data.get('mechanic_id')
-#     )
-
-#     db.session.add(new_user)
-#     db.session.commit()
-#     return jsonify(user_to_dict(new_user)), 201
 
 @user_bp.route('/signup', methods=['POST'])
 def customer_signup():
@@ -232,7 +196,7 @@ def login():
         return jsonify({'error': 'Invalid email or password'}), 401
 
     # Create JWT
-    #  print(f'Creating access token for user: {user.customer_id}'),
+    print(f'Creating access token for user: {user.customer_id}')
     access_token = create_access_token(
        
         identity={'id': user.id, 'role': user.role, 'customer_id': user.customer_id },
@@ -254,3 +218,27 @@ def logout():
     blacklist.add(jti)
     return jsonify({'message': 'Successfully logged out'}), 200
 
+@user_bp.route('/user/me', methods=['GET'])
+@jwt_required()
+def get_current_user():
+    identity = get_jwt_identity()
+    user = User.query.get(identity['id'])
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    
+    # Get related data based on role
+    data = {
+        'id': user.id,
+        'email': user.email,
+        'role': user.role,
+        'created_at': user.created_at.isoformat()
+    }
+    
+    if user.role == 'customer' and user.customer:
+        data['name'] = user.customer.name
+    elif user.role == 'mechanic' and user.mechanic:
+        data['name'] = user.mechanic.name
+    elif user.role == 'admin' and user.admin:
+        data['name'] = user.admin.name
+    
+    return jsonify(data), 200
