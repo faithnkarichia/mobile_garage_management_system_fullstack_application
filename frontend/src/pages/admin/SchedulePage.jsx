@@ -28,7 +28,7 @@
     const handleSubmit = (e) => {
       e.preventDefault();
       console.log('Form submitted:', formData);
-      // Here you would typically send the data to your backend
+     
     };
 
     const serviceTypes = [

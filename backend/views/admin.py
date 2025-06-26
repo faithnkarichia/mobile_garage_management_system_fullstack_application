@@ -81,7 +81,7 @@ def update_admin(admin_id):
         admin.phone_number = phone
         updated = True
 
-    # ✅ Update User fields
+    
     user = admin.users[0]  # access related user
 
     if 'email' in data:

@@ -102,7 +102,7 @@ export default function MechanicLayout({ children }) {
 
   return (
     <div className="flex h-screen bg-gray-100 font-sans">
-      {/* Mobile sidebar backdrop */}
+      
       {mobileSidebarOpen && (
         <div
           className="fixed inset-0 z-20 bg-black bg-opacity-50 lg:hidden"

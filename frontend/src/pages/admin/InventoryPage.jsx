@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 
 const InventoryPage = () => {
-  // State management
+  
   const [inventory, setInventory] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -32,7 +32,7 @@ const InventoryPage = () => {
   // get inventory from the db
   useEffect(() => {
     const token = localStorage.getItem("access_token");
-    console.log("Token:", token); // Debugging line to check token value
+    console.log("Token:", token); 
 
     fetch(`${import.meta.env.VITE_API_URL}/inventories`, {
       headers: {
@@ -546,20 +546,7 @@ const InventoryPage = () => {
                       min="0"
                     />
                   </div>
-                  {/* <div>
-                    <label htmlFor="supplier" className="block text-sm font-medium text-gray-700 mb-1">
-                      Supplier *
-                    </label>
-                    <input
-                      type="text"
-                      id="supplier"
-                      name="supplier"
-                      value={newItem.supplier}
-                      onChange={handleInputChange}
-                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                      required
-                    />
-                  </div> */}
+                  
                 </div>
                 <div className="mt-6 flex justify-end space-x-3">
                   <button

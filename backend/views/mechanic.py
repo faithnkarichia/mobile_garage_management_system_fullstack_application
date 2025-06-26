@@ -68,12 +68,12 @@ def create_mechanic():
         if not data or not all(field in data for field in required_fields):
             return jsonify({'error': 'Missing required fields'}), 400
 
-        # ✅ Clean & Validate phone number
+        
         phone = data['phone_number'].strip()
         if not re.fullmatch(r'^\+?\d{10,15}$', phone):
             return jsonify({'error': 'Invalid phone number format'}), 400
 
-        # ✅ Check if mechanic already exists by name/phone/email
+        # Check if mechanic already exists by name/phone/email
         if Mechanic.query.filter_by(name=data['name'].strip()).first():
             return jsonify({'error': 'Mechanic with this name already exists'}), 409
         if Mechanic.query.filter_by(phone_number=phone).first():
@@ -81,25 +81,25 @@ def create_mechanic():
         if Mechanic.query.filter_by(email=data['email'].strip()).first():
             return jsonify({'error': 'Mechanic with this email already exists'}), 409
 
-        # ✅ Email format validation
+       
         if not re.fullmatch(r'^[\w\.-]+@[\w\.-]+\.\w+$', data['email'].strip()):
             return jsonify({'error': 'Invalid email format'}), 400
 
-        # ✅ Experience years must be int ≥ 0
+        
         if not isinstance(data['experience_years'], int) or data['experience_years'] < 0:
             return jsonify({'error': 'Experience years must be a non-negative integer'}), 400
 
-        # ✅ Status validation
+        
         status = data['status'].strip().title()
         if status not in ['Available', 'Unavailable']:
             return jsonify({'error': 'Status must be either Available or Unavailable'}), 400
 
-        # ✅ Password validation
+        # Password validation
         password = data['password'].strip()
         if len(password) < 6:
             return jsonify({'error': 'Password must be at least 6 characters long'}), 400
 
-        # ✅ Create Mechanic
+        #  Create Mechanic
         new_mechanic = Mechanic(
             name=data['name'].strip(),
             specialty=data['specialty'].strip(),
@@ -111,9 +111,9 @@ def create_mechanic():
             rating=data.get('rating', None),
         )
         db.session.add(new_mechanic)
-        db.session.flush()  # ✅ Get new_mechanic.id without committing yet
+        db.session.flush()  # Get new_mechanic.id without committing yet
 
-        # ✅ Create related User account
+        # Create related User account
         hashed_pw = bcrypt.generate_password_hash(password).decode('utf-8')
 
         new_user = User(
@@ -124,7 +124,7 @@ def create_mechanic():
         )
         db.session.add(new_user)
 
-        db.session.commit()  # ✅ Commit both together
+        db.session.commit()  #  Commit both together
 
         return jsonify(mechanic_to_dict(new_mechanic)), 201
 
@@ -305,7 +305,7 @@ def mechanic_dashboard_data():
 
 
 
-# GET /mechanic/users/{user_id} - Get mechanic user details
+# - Get mechanic user details
 @mechanic_bp.route('/mechanic/users/<int:user_id>', methods=['GET'])
 @jwt_required()
 def get_mechanic_user(user_id):

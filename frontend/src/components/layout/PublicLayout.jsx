@@ -37,22 +37,7 @@ export default function PublicLayout({ children }) {
     window.location.href = "/";
   };
 
-  // const handleDeleteAccount = async () => {
-  //   if (window.confirm("Are you sure you want to delete your account? This cannot be undone.")) {
-  //     try {
-  //       const token = localStorage.getItem("access_token");
-  //       await fetch(`${import.meta.env.VITE_API_URL}/user/me`, {
-  //         method: "DELETE",
-  //         headers: {
-  //           Authorization: `Bearer ${token}`,
-  //         },
-  //       });
-  //       handleLogout();
-  //     } catch (error) {
-  //       console.error("Failed to delete account:", error);
-  //     }
-  //   }
-  // };
+
 
   return (
     <div className="font-sans bg-white text-gray-900 min-h-screen flex flex-col">

@@ -124,7 +124,7 @@ def create_service_request():
         return jsonify({'error': 'Missing required fields'}), 400
 
     try:
-        # Extract and normalize vehicle details
+        
         make = data['vehicle_details'].get('make', '').strip().lower()
         model = data['vehicle_details'].get('model', '').strip().lower()
         year = int(data['vehicle_details'].get('year_of_manufacture', 0))
@@ -142,7 +142,7 @@ def create_service_request():
         else:
             # Create new vehicle if it doesn't exist
             new_vehicle = Vehicle(
-                make=make.title(),  # Store in title case (e.g., "Toyota")
+                make=make.title(),  
                 model=model.title(),
                 year_of_manufacture=year,
                 customer_id=user.customer_id

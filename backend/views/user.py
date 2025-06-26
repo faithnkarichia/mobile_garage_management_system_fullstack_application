@@ -8,6 +8,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity, create_access_tok
 from flask_mail import Message
 from extensions import mail
 from flask import current_app
+from flask_mail import Message
 
 user_bp = Blueprint("user_bp", __name__)
 
@@ -242,3 +243,53 @@ def get_current_user():
         data['name'] = user.admin.name
     
     return jsonify(data), 200
+
+
+
+
+
+@user_bp.route('/contact', methods=['POST'])
+def send_contact_email():
+    data = request.json
+    
+    
+    if not all([data.get('name'), data.get('email'), data.get('message')]):
+        return jsonify({'error': 'Missing required fields'}), 400
+    
+    try:
+        # Create email message
+        msg = Message(
+            subject=f"New Contact Form Submission from {data['name']}",
+            recipients=["faynkarichia@gmail.com"],  # Your business email
+            sender=app.config['MAIL_DEFAULT_SENDER']
+        )
+        
+        # Email body
+        msg.body = f"""
+        New contact form submission:
+        
+        Name: {data['name']}
+        Email: {data['email']}
+        Phone: {data.get('phone', 'Not provided')}
+        
+        Message:
+        {data['message']}
+        """
+        
+        
+        msg.html = f"""
+        <h3>New contact form submission:</h3>
+        <p><strong>Name:</strong> {data['name']}</p>
+        <p><strong>Email:</strong> {data['email']}</p>
+        <p><strong>Phone:</strong> {data.get('phone', 'Not provided')}</p>
+        <p><strong>Message:</strong></p>
+        <p>{data['message']}</p>
+        """
+        
+        
+        mail.send(msg)
+        
+        return jsonify({'message': 'Email sent successfully'}), 200
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500

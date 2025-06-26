@@ -84,7 +84,7 @@ export default function AdminLayout({ children }) {
     { name: "Dashboard", icon: ClipboardCheck, path: "/admin" },
     { name: "Service Requests", icon: Car, path: "/admin/requests" },
     { name: "Mechanics", icon: Users, path: "/admin/mechanics" },
-    { name: "Schedule", icon: Calendar, path: "/admin/schedule" },
+    // { name: "Schedule", icon: Calendar, path: "/admin/schedule" },
     { name: "Admin Users", icon: ShieldCheck, path: "/admin/users" },
     { name: "Inventory", icon: ShieldCheck, path: "/admin/inventory" },
   ];
@@ -219,13 +219,13 @@ export default function AdminLayout({ children }) {
                 {/* Profile Dropdown */}
                 {showProfilePopup && (
   <div className="fixed right-4 lg:absolute lg:right-0 lg:left-[calc(14%)] mt-2 w-64 bg-white rounded-xl shadow-xl z-[60] border border-gray-200 overflow-hidden">
-    {/* Mobile backdrop - only shows on mobile */}
+    
     <div 
       className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-[-1]" 
       onClick={() => setShowProfilePopup(false)}
     />
     
-    {/* Popup content container - positioned to right on desktop */}
+    
     <div className="absolute right-0 lg:static w-full h-full lg:h-auto max-w-md ml-auto lg:max-w-none bg-white">
       {/* Header */}
       <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 flex justify-between items-center">

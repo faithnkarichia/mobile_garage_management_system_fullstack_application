@@ -109,7 +109,7 @@ def update_sri(sri_id):
     db.session.commit()
     return jsonify(sri_to_dict(sri)), 200
 
-# Optional delete endpoint
+
 # @service_request_inventory_bp.route('/service_request_inventories/<int:sri_id>', methods=['DELETE'])
 # @jwt_required()
 # def delete_sri(sri_id):

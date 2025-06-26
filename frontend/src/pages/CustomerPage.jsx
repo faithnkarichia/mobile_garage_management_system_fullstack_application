@@ -340,55 +340,6 @@ const CustomerDashboard = () => {
       });
   };
 
-  // Delete service request from backend
-  // const deleteServiceRequest = (id) => {
-  //   const token = localStorage.getItem("access_token");
-
-  //   fetch(`${import.meta.env.VITE_API_URL}/service_requests/${id}`, {
-  //     method: "DELETE",
-  //     headers: {
-  //       "Content-Type": "application/json",
-  //       Authorization: `Bearer ${token}`,
-  //     },
-  //   })
-  //     .then((response) => {
-  //       if (!response.ok) {
-  //         throw new Error("Failed to delete service request");
-  //       }
-  //       setServiceRequests(
-  //         serviceRequests.filter((request) => request.id !== id)
-  //       );
-  //     })
-  //     .catch((error) => {
-  //       console.error("Error deleting service request:", error);
-  //     });
-  // };
-
-  // Delete vehicle from backend
-  // const deleteVehicle = (id) => {
-  //   const token = localStorage.getItem("access_token");
-
-  //   fetch(`${import.meta.env.VITE_API_URL}/vehicles/${id}`, {
-  //     method: "DELETE",
-  //     headers: {
-  //       "Content-Type": "application/json",
-  //       Authorization: `Bearer ${token}`,
-  //     },
-  //   })
-  //     .then((response) => {
-  //       if (!response.ok) {
-  //         throw new Error("Failed to delete vehicle");
-  //       }
-  //       setVehicles(vehicles.filter((vehicle) => vehicle.id !== id));
-  //       // Also remove any service requests associated with this vehicle
-  //       setServiceRequests(
-  //         serviceRequests.filter((request) => request.vehicle_id !== id)
-  //       );
-  //     })
-  //     .catch((error) => {
-  //       console.error("Error deleting vehicle:", error);
-  //     });
-  // };
 
   const getVehicleById = (id) => {
     return vehicles && vehicles.find((vehicle) => vehicle.id === id);
@@ -486,12 +437,7 @@ const CustomerDashboard = () => {
                         >
                           Edit
                         </button>
-                        {/* <button
-                          onClick={() => deleteServiceRequest(request.id)}
-                          className="text-sm text-red-600 hover:text-red-800"
-                        >
-                          Delete
-                        </button> */}
+                        
                       </div>
                     </div>
                   );
@@ -541,14 +487,7 @@ const CustomerDashboard = () => {
                             Service requests: {vehicleRequests.length}
                           </div>
                         </div>
-                        {/* <div>
-                          <button
-                            onClick={() => deleteVehicle(vehicle.id)}
-                            className="text-sm text-red-600 hover:text-red-800"
-                          >
-                            Delete
-                          </button>
-                        </div> */}
+                        
                       </div>
                     </div>
                   );
