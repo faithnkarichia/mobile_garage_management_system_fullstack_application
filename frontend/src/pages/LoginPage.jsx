@@ -97,71 +97,13 @@ export default function LoginPage() {
     });
     
 
-    // fetch(`${import.meta.env.VITE_API_URL}/login`, {
-    //   method: 'POST',
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //   },
-    //   body: JSON.stringify({
-    //     email: loginData.email, 
-    //     password: loginData.password
-    //   }),
-    // })
-    // .then(response => {
-    //   if (!response.ok) {
-    //     return response.json().then(err => {
-    //       throw new Error(err.error || 'Login failed');
-    //     });
-    //   }
-    //   return response.json();
-    // })
-    // .then(data => {
-    //   if (data.access_token) {
-    //     localStorage.setItem('access_token', data.access_token);
-    //     const decoded = jwtDecode(data.access_token); 
-    //     const role = decoded.sub.role;
-
-        
-    //     Swal.close();
-
-        
-    //     Swal.fire({
-    //       title: 'Success!',
-    //       text: 'You have successfully logged in.',
-    //       icon: 'success',
-    //       confirmButtonText: 'Continue',
-    //       timer: 2000,
-    //       timerProgressBar: true,
-    //     }).then(() => {
-          
-    //       if (role === 'admin') window.location.href = '/admin';
-    //       else if (role === 'mechanic') window.location.href = '/mechanic';
-    //       else window.location.href = '/customer';
-    //     });
-
-    //   } else {
-    //     throw new Error('No access token received');
-    //   }
-    // })
-    // .catch(error => {
-    //   console.error('Login error:', error);
-    //   setError(error.message || 'Login failed. Please try again.');
-      
-      
-    //   Swal.fire({
-    //     title: 'Error!',
-    //     text: error.message || 'Login failed. Please try again.',
-    //     icon: 'error',
-    //     confirmButtonText: 'Try Again'
-    //   });
-    // })
-    // .finally(() => {
-    //   setIsSubmitting(false);
-    // });
+    
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    // <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-[url('')] bg-cover bg-center py-12 px-4 sm:px-6 lg:px-8">
+
       <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-lg">
         <div className="text-center">
           <h2 className="mt-6 text-3xl font-extrabold text-gray-900">

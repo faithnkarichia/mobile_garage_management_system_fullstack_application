@@ -17,9 +17,9 @@ const MechanicServiceRequests = () => {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
-  useEffect(() => {
+  const fetchRequests = () => {
     const token = localStorage.getItem("access_token");
-    
+  
     fetch(`${import.meta.env.VITE_API_URL}/service_requests`, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -37,6 +37,13 @@ const MechanicServiceRequests = () => {
           confirmButtonColor: '#3085d6',
         });
       });
+  };
+  
+
+  useEffect(() => {
+    fetchRequests();
+    
+  
   }, []);
   console.log(serviceRequests);
   const filteredRequests =
@@ -49,13 +56,46 @@ const MechanicServiceRequests = () => {
       )) ||
     [];
 
-  const updateRequestStatus = (id, newStatus) => {
-    setServiceRequests((prev) =>
-      prev.map((request) =>
-        request.id === id ? { ...request, status: newStatus } : request
-      )
-    );
-  };
+    const updateRequestStatus = (id, newStatus) => {
+      const token = localStorage.getItem("access_token");
+    
+      fetch(`${import.meta.env.VITE_API_URL}/service_requests/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status: newStatus }),
+      })
+        .then((res) => {
+          if (!res.ok) {
+            throw new Error("Failed to update status");
+          }
+          return res.json();
+        })
+        .then(() => {
+          
+
+          fetchRequests()
+        
+          Swal.fire({
+            icon: "success",
+            title: "Success",
+            text: `Status updated to "${newStatus}"`,
+            timer: 2000,
+            showConfirmButton: false,
+          });
+        })
+        .catch((err) => {
+          console.error("Error updating status:", err);
+          Swal.fire({
+            icon: "error",
+            title: "Oops!",
+            text: "Failed to update the status. Please try again.",
+          });
+        });
+    };
+    
 
   const openDetails = (request) => {
     setSelectedRequest(request);
@@ -94,93 +134,91 @@ const MechanicServiceRequests = () => {
         <div className="bg-white shadow rounded-lg overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Vehicle
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Customer
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Issue
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredRequests.length > 0 ? (
-                  filteredRequests.map((request) => (
-                    <tr key={request.id}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          {`${request.vehicle_details?.make || ""} ${
-                            request.vehicle_details?.model || ""
-                          }, ${
-                            request.vehicle_details?.year_of_manufacture || ""
-                          }`}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {request.createdAt}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {request.customer_id}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        {request.issue}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`px-2 py-1 text-xs rounded-full ${
-                            request.status === "Completed"
-                              ? "bg-green-100 text-green-800"
-                              : request.status === "In Progress"
-                              ? "bg-blue-100 text-blue-800"
-                              : "bg-gray-100 text-gray-800"
-                          }`}
-                        >
-                          {request.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex space-x-2">
-                          {request.status !== "Completed" && (
-                            <button
-                              onClick={() =>
-                                updateRequestStatus(request.id, "Completed")
-                              }
-                              className="text-green-600 hover:text-green-900 flex items-center"
-                            >
-                              <Check className="h-4 w-4 mr-1" /> Complete
-                            </button>
-                          )}
-                          <button
-                            onClick={() => openDetails(request)}
-                            className="text-blue-600 hover:text-blue-900 flex items-center"
-                          >
-                            <ChevronDown className="h-4 w-4 mr-1" /> Details
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td
-                      colSpan="5"
-                      className="px-6 py-4 text-center text-sm text-gray-500"
-                    >
-                      No service requests found.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
+            <thead className="bg-gray-50">
+  <tr>
+    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+      Service ID
+    </th>
+    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+      Vehicle
+    </th>
+    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+      Customer
+    </th>
+    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+      Issue
+    </th>
+    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+      Status
+    </th>
+    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+      Actions
+    </th>
+  </tr>
+</thead>
+<tbody className="bg-white divide-y divide-gray-200">
+  {filteredRequests.length > 0 ? (
+    filteredRequests.map((request) => (
+      <tr key={request.id}>
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+          {request.id}
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap">
+          <div className="text-sm font-medium text-gray-900">
+            {`${request.vehicle_details?.make || ""} ${
+              request.vehicle_details?.model || ""
+            }, ${request.vehicle_details?.year_of_manufacture || ""}`}
+          </div>
+          <div className="text-sm text-gray-500">{request.createdAt}</div>
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+          {request.customer_details.name}
+        </td>
+        <td className="px-6 py-4 text-sm text-gray-900">
+          {request.issue}
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap">
+          <span
+            className={`px-2 py-1 text-xs rounded-full ${
+              request.status === "Completed"
+                ? "bg-green-100 text-green-800"
+                : request.status === "In Progress"
+                ? "bg-blue-100 text-blue-800"
+                : "bg-gray-100 text-gray-800"
+            }`}
+          >
+            {request.status}
+          </span>
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+          <div className="flex space-x-2">
+            {request.status !== "Completed" && (
+              <button
+                onClick={() => updateRequestStatus(request.id, "Completed")}
+                className="text-green-600 hover:text-green-900 flex items-center"
+              >
+                <Check className="h-4 w-4 mr-1" /> Complete
+              </button>
+            )}
+            <button
+              onClick={() => openDetails(request)}
+              className="text-blue-600 hover:text-blue-900 flex items-center"
+            >
+              <ChevronDown className="h-4 w-4 mr-1" /> Details
+            </button>
+          </div>
+        </td>
+      </tr>
+    ))
+  ) : (
+    <tr>
+      <td colSpan="6" className="px-6 py-4 text-center text-sm text-gray-500">
+        No service requests found.
+      </td>
+    </tr>
+  )}
+</tbody>
+
             </table>
           </div>
         </div>

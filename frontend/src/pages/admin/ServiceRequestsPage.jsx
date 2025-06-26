@@ -198,6 +198,7 @@ export default function ServiceRequestsPage() {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {requests.map((request) => {
+                {console.log(request,'reeeeq')}
                 const { date, time } = formatDateTime(request.requested_at);
                 const currentMechanic = mechanics.find(m => m.id === request.mechanic_id);
                 
@@ -205,7 +206,7 @@ export default function ServiceRequestsPage() {
                   <tr key={request.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">#{request.id}</div>
-                      <div className="text-sm text-gray-500">Customer {request.customer_id}</div>
+                      <div className="text-sm text-gray-500"> {request.customer_details.name}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
