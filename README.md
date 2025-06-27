@@ -40,7 +40,7 @@
 
 ## Deployment
 
-- You can view the `frontend live` on [ Mobile garage management system](https://mobile-garage-management-system-9jrg7bgvb.vercel.app/)
+- You can view the `frontend live` on [ Mobile garage management system](https://mobile-garage-management-system.vercel.app/)
 - You can view the `flask backend` here [ Mobile garage management system](https://mobile-garage-management-system.onrender.com)
 
 ## Setup and Installation Requirements
