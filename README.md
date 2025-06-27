@@ -1,73 +1,112 @@
-# Mobile Garage Management System
-The Mobile Garage Management System is a full-stack web application designed with love to make garage life easier and more efficient. It allows customers to book vehicle service requests from the comfort of their home—no more waiting in line at the garage.
+# Mobile Garage Management System by: FAITH NKARICHIA
 
-Once a request is submitted, the admin assigns a qualified mechanic and facilitates smooth communication between the customer and the mechanic.
+## Dscription
 
-Meanwhile, admins can oversee service operations, manage mechanics, and track inventory usage behind the scenes ensuring everything runs smoothly.
+- The Mobile Garage Management System is a full-stack web application designed with love to make garage life easier and more efficient. It allows customers to book vehicle service requests from the comfort of their home—no more waiting in line at the garage.
 
+- Once a request is submitted, the admin assigns a qualified mechanic and facilitates smooth communication between the customer and the mechanic.
+
+- Meanwhile, admins can oversee service operations, manage mechanics, and track inventory usage behind the scenes ensuring everything runs smoothly.
+
+## Schema
+
+![ERD Diagram](./assets/erd.png)
+
+
+
+## Loom video link
+[loom video](https://www.loom.com/share/f662f09da538435eaf8be28bee7ca399?sid=2064e6da-0b84-4afe-9ce4-75c870c4bfe0)
 ## Features
-* Role-based access for Admins, Mechanics, and Customers
 
-* Customers can submit and monitor service requests
+- Role-based access for Admins, Mechanics, and Customers
 
-* Mechanics can view assigned tasks and update their status
+- Customers can submit and monitor service requests
 
-* Admins can manage users, services, and inventory
+- Mechanics can view assigned tasks and update their status
 
-* Real-time inventory updates based on part usage
+- Admins can manage users, services, and inventory
 
-* Fully responsive and user-friendly interface
+- Real-time inventory updates based on part usage
+
+- Fully responsive and user-friendly interface
 
 ## Technologies Used
-``` Frontend: React, Vite, Tailwind CSS – deployed on Vercel```
 
-``` Backend: Flask, Flask SQLAlchemy, JWT Authentication – deployed on Render ```
+` Frontend: React, Vite, Tailwind CSS – deployed on Vercel`
 
-``` Database: PostgreSQL – hosted on Neon```
+`Backend: Flask, Flask SQLAlchemy, JWT Authentication – deployed on Render`
 
-## Live Demo
-[ Visit the Live App](https://mobile-garage-management-system-m1ysvf39l.vercel.app/)
+` Database: PostgreSQL – hosted on Neon`
 
+## Deployment
 
+- You can view the `frontend live` on [ Mobile garage management system](https://mobile-garage-management-system-9jrg7bgvb.vercel.app/)
+- You can view the `flask backend` here [ Mobile garage management system](https://mobile-garage-management-system.onrender.com)
 
+## Setup and Installation Requirements
 
-## Running Locally
-Follow these steps to run the project locally on your machine:
+Follow these steps to set up the project on your local machine.
 
-1. Clone the repository
-* git clone https://github.com/your-username/mobile-garage-management-system.git
-* cd mobile-garage-management-system
+1. Clone the Repository
+   ```bash
+    git clone https://github.com/your-username/mobile-garage-management-system.git
+    cd mobile-garage-management-system
+   ```
+2. Backend Setup (Flask + PostgreSQL)
+   ```bash
+    cd backend
+    python3 -m venv venv
+    source venv/bin/activate
+    pip install -r requirements.txt
+   ```
+   - Create a .env file inside the backend/ folder and add the following:
 
-2. Backend Setup (Flask)
+```bash
+DATABASE_URL=postgresql://your-username:your-password@localhost:5432/mobile_garage
+JWT_SECRET_KEY=your_jwt_secret_key
+MAIL_USERNAME=your_email@gmail.com
+MAIL_PASSWORD=your_email_password
+```
 
-* cd backend
-* python -m venv venv
-* source venv/bin/activate
-* pip install -r requirements.txt
-* Create a .env file and add your environment variables (e.g. DATABASE_URL, JWT_SECRET_KEY, etc.)
+    - Make sure PostgreSQL is installed and your database mobile_garage is created.
 
-* Rin the server ``` flask run ```
+3. Run Migrations
 
+```bash
+    flask db init     # only the first time
+    flask db migrate -m "Initial migration"
+    flask db upgrade
+```
 
-3. Frontend Setup (React)
-* cd frontend
-* npm install
-* Create a .env file and define your API URL:
+4. Start the Backend Server
 
+```bash
+flask run --debug
+```
 
-* VITE_API_URL=http://localhost:5555
+3.  Frontend Setup (React + Vite)
 
-* npm run dev
-4. Access the App
-Open your browser and go to:
-http://localhost:5173
+```
+cd ../frontend
+npm install
+```
+
+- Create a `.env` file inside the `frontend/` folder and add:
+
+```bash
+    VITE_API_URL=http://localhost:5555
+```
+
+- Start the Frontend Dev Server
+
+```bash
+  npm run dev
+```
+
+## Contact details
+
+email : `faeynkarichia@gmail.com`
 
 ## License
+
 This project is licensed under the [MIT License](./LICENSE) You may use, modify, and distribute this software freely, with proper attribution.
-# created by: FAITH NKARICHIA
-## contact details
-* faeynkarichia@gmail.com
-
-
-
-

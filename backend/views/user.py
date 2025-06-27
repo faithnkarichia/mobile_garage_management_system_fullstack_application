@@ -260,7 +260,7 @@ def send_contact_email():
         # Create email message
         msg = Message(
             subject=f"New Contact Form Submission from {data['name']}",
-            recipients=["faynkarichia@gmail.com"],  # Your business email
+            recipients=["faynkarichia@gmail.com"],  
             sender=app.config['MAIL_DEFAULT_SENDER']
         )
         
